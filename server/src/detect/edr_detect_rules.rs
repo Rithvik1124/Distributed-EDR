@@ -29,30 +29,24 @@ pub fn match_yara_rule(file_dir: &str){
 }
 
 pub fn match_sigma_rule(event: &TelemetryEvent)-> Vec<DetectionResult>{
-    let detected: Vec<DetectionResult>;
+    let mut detected: Vec<DetectionResult> = Vec::new();
     let mut sigma_event:Event = Event::new();
     sigma_event.insert("Image",event.filename.clone());
     sigma_event.insert("CommandLine",event.comm.clone());
     for rule in SIGMA_RULES.iter() {
-        let mut detect:DetectionResult = DetectionResult::new();
-        if rule.is_match(&sigma_event) {
-            if let Some(id) = &rule.id {
-            detect.rule_id(id.clone());
-        }
+    
 
-        detect.rule_name(rule.title.to_owned());
-
-        if let Some(refs) = &rule.references {
-            detect.rule_reference(refs.clone());
-        }
-                
-            
-        }
-        else {
-            println!("No event found match {:?}", rule);
-        }
+    if !rule.is_match(&sigma_event) {
+        println!("No event found match {:?}", rule);
+        continue;
     }
-
+    let mut detect:DetectionResult = DetectionResult{
+       rule_id : rule.id.clone().unwrap_or_default(),
+       rule_name: rule.title.to_owned(),
+    };
+    detected.push(detect);
+}
+    return detected
 }
 // Rule { title: "Triple Cross eBPF Rootkit Install Commands", id: Some("22236d75-d5a0-4287-bf06-c93b1770860f"), 
 // name: None, related: None, taxonomy: None, status: Some(Test), description: Some("Detects default install commands of the Triple Cross eBPF rootkit based on the \"deployer.sh\" script"), 

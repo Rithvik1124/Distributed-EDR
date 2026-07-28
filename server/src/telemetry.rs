@@ -25,17 +25,17 @@ use serde::{Deserialize, Serialize};
 //#[derive(Serialize, Deserialize)]
 
 pub struct DetectionResult{
-    rule_id: String,
-    rule_name: String,
-    rule_reference: String,
+    pub rule_id: String,
+    pub rule_name: String,
+    //pub rule_reference: String,
 }
 
 #[derive(Serialize, Deserialize,Debug, Hash)]
 pub struct AnalysisResult{
-    is_mal: bool,
-    sigma_results: Vec<DetectionResult>,
-    yara_results: Vec<DetectionResult>,
-    ioc_results: Vec<DetectionResult>,
+    pub is_mal: bool,
+    pub sigma_results: Vec<DetectionResult>,
+    pub yara_results: Vec<DetectionResult>,
+    pub ioc_results: Vec<DetectionResult>,
 }
 
 

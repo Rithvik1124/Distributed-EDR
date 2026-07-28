@@ -22,6 +22,9 @@ fn calculate_hash<T: Hash>(value: &T) -> u64 {
 }
 
 
+pub fn write_sigma_rule()
+
+
 pub fn write_event(event: TelemetryEvent) -> Result<(), Box<dyn std::error::Error>>{
     println!("Starting write");
     let event_id = calculate_hash(&event);
@@ -39,7 +42,8 @@ pub fn write_event(event: TelemetryEvent) -> Result<(), Box<dyn std::error::Erro
         table.insert(event_id, &bytes.as_slice())?;
     }
     write_txn.commit()?;
-    crate::detect::edr_detect_rules::match_sigma_rule(&event);
+    event.analysis_result.sigma_results = crate::detect::edr_detect_rules::match_sigma_rule(&event);
+
 
     // Ok(())
 
