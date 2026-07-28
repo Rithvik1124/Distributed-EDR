@@ -2,14 +2,14 @@ use redb::{Database, TableDefinition, ReadableTable, ReadableDatabase};
 use serde::{Deserialize, Serialize};
 //mod initialize_db;
 use crate::telemetry::TelemetryEvent;
+use crate::detect::edr_detect_rules;
+
 use std::hash::{DefaultHasher, Hash, Hasher};
 const EVENTS_TABLE: TableDefinition<u64, &[u8]> = TableDefinition::new("events_in");
 use std::sync::LazyLock;
 
 // Was calling setdb in the function each time so turned it into static
 const PATH: &str = "events_in.redb";
-
-
 static DB: LazyLock<Database> = LazyLock::new(|| {
     Database::create(PATH)
         .expect("Failed to create DB")
@@ -39,6 +39,8 @@ pub fn write_event(event: TelemetryEvent) -> Result<(), Box<dyn std::error::Erro
         table.insert(event_id, &bytes.as_slice())?;
     }
     write_txn.commit()?;
+    crate::detect::edr_detect_rules::match_sigma_rule(&event);
+
     // Ok(())
 
     let read_txn = DB.begin_read()?;

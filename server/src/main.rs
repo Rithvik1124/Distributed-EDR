@@ -7,6 +7,7 @@ use axum::{
 mod db;
 mod telemetry;
 use crate::telemetry::TelemetryEvent;
+use crate::detect::edr_detect_rules;
 mod detect;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

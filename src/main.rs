@@ -62,6 +62,21 @@ pub struct GenEvent {
     pub time_stamp: u64,
 } 
 
+#[derive(Default, Serialize, Deserialize,Debug, Hash)]
+
+struct DetectionResult{
+    rule_id: String,
+    rule_name: String,
+    rule_triggers: String,
+}
+
+#[derive(Default, Serialize, Deserialize,Debug, Hash)]
+struct AnalysisResult{
+    is_mal: bool,
+    sigma_results: Vec<DetectionResult>,
+    yara_results: Vec<DetectionResult>,
+    ioc_results: Vec<DetectionResult>,
+}
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct TelemetryEvent {     // this struct can be eliminated by adding a conversion method to GenEvent - no, it can't
@@ -79,6 +94,9 @@ pub struct TelemetryEvent {     // this struct can be eliminated by adding a con
     pub dst_port: String, //max 5 bytes
 
     pub time_stamp: String,
+    pub analysis_result: AnalysisResult,
+
+
 } 
 
 

@@ -1,5 +1,5 @@
 //because using TelemetryEvent separately in both main.rs and events.rs gave error
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{ Hash, Hasher};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Hash, Debug)]
@@ -27,13 +27,12 @@ use serde::{Deserialize, Serialize};
 struct DetectionResult{
     rule_id: String,
     rule_name: String,
-    rule_triggers: String,
+    rule_reference: String,
 }
 
 #[derive(Serialize, Deserialize,Debug, Hash)]
 struct AnalysisResult{
     is_mal: bool,
-    detection_rule:String,
     sigma_results: Vec<DetectionResult>,
     yara_results: Vec<DetectionResult>,
     ioc_results: Vec<DetectionResult>,
@@ -41,7 +40,7 @@ struct AnalysisResult{
 
 
 
-#[derive(Serialize, Deserialize, Hash, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TelemetryEvent {     
     pub event_type: String,         
     pub pid: u32,
@@ -55,6 +54,21 @@ pub struct TelemetryEvent {
     pub dst_port: String, //max 5 bytes
     pub time_stamp:String,
     pub analysis_result: AnalysisResult,
+}
+
+impl Hash for TelemetryEvent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.event_type.hash(state);
+        self.filename.hash(state);
+        self.dst_ip.hash(state);
+        self.dst_port.hash(state);
+        self.pid.hash(state);
+        self.ppid.hash(state);
+        self.uid.hash(state);
+        self.gid.hash(state);
+        self.tgid.hash(state);
+        self.comm.hash(state);
+    }
 }
 
 // #[derive(Serialize, Deserialize, Hash, Debug)]

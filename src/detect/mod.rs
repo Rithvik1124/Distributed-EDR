@@ -45,8 +45,8 @@ pub fn load_yara_rules(yara_rules_dir: &str)-> yara_x::Rules{
 }
 
 
-pub static YARA_RULES: Lazy<Vec<Rule>> = Lazy::new(|| {
-    load_sigma_rules("rules/yara/")
+pub static YARA_RULES: Lazy<yara_x::Rules> = Lazy::new(|| {
+    load_yara_rules("rules/yara/")
 });
 
 pub static SIGMA_RULES: Lazy<Vec<Rule>> = Lazy::new(|| {

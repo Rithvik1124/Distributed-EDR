@@ -10,12 +10,12 @@ use yara_x;
 
 #[warn(unused_variables)]
 
-pub fn match_yara_rule(file_dir: &str, rules: yara_x::Rules ){
+pub fn match_yara_rule(file_dir: &str){
     let mut file = fs::File::open(file_dir).unwrap();    
     let mut data = Vec::new();
     file.read_to_end(&mut data).unwrap();
     println!("Contents:{:?}",data);
-    let mut scanner = yara_x::Scanner::new(&rules);
+    let mut scanner = yara_x::Scanner::new(&YARA_RULES);
 
     let results = scanner.scan(&data).unwrap();
 

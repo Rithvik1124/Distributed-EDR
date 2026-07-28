@@ -1,0 +1,24 @@
+title: Test for detecting edr-agent - can be removed
+id: 123-456-789-6767-21
+status: test
+description: Detects the edr-agent
+references:
+    - https://github.com/h3xduck/TripleCross/blob/1f1c3e0958af8ad9f6ebe10ab442e75de33e91de/apps/deployer.sh
+author: Me
+date: 2026-07-28
+tags:
+    - ignore.agent
+logsource:
+    category: process_creation
+    product: linux
+detection:
+    selection:
+        Image|endswith: '/sudo'
+        CommandLine|contains|all:
+            - './target/debug/edr-agent'
+        CommandLine|contains:
+            - './target/debug/edr-agent'
+    condition: selection
+falsepositives:
+    - Unlikely
+level: low
