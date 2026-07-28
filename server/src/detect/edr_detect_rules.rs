@@ -34,10 +34,18 @@ pub fn match_sigma_rule(event: &TelemetryEvent)-> Vec<DetectionResult>{
     sigma_event.insert("Image",event.filename.clone());
     sigma_event.insert("CommandLine",event.comm.clone());
     for rule in SIGMA_RULES.iter() {
-        
+        let mut detect:DetectionResult = DetectionResult::new();
         if rule.is_match(&sigma_event) {
-            println!("MATCH: {:?}", rule);
-            
+            if let Some(id) = &rule.id {
+            detect.rule_id(id.clone());
+        }
+
+        detect.rule_name(rule.title.to_owned());
+
+        if let Some(refs) = &rule.references {
+            detect.rule_reference(refs.clone());
+        }
+                
             
         }
         else {

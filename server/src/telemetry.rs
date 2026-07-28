@@ -24,14 +24,14 @@ use serde::{Deserialize, Serialize};
 // }
 //#[derive(Serialize, Deserialize)]
 
-struct DetectionResult{
+pub struct DetectionResult{
     rule_id: String,
     rule_name: String,
     rule_reference: String,
 }
 
 #[derive(Serialize, Deserialize,Debug, Hash)]
-struct AnalysisResult{
+pub struct AnalysisResult{
     is_mal: bool,
     sigma_results: Vec<DetectionResult>,
     yara_results: Vec<DetectionResult>,
