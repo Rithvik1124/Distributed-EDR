@@ -37,7 +37,7 @@ pub fn match_sigma_rule(event: &TelemetryEvent)-> Vec<DetectionResult>{
     
 
     if !rule.is_match(&sigma_event) {
-        println!("No event found match {:?}", rule);
+        //println!("No event found match {:?}", rule);
         continue;
     }
     let mut detect:DetectionResult = DetectionResult{

@@ -67,7 +67,7 @@ pub struct GenEvent {
 struct DetectionResult{
     rule_id: String,
     rule_name: String,
-    rule_triggers: String,
+    //rule_triggers: String,
 }
 
 #[derive(Default, Serialize, Deserialize,Debug, Hash)]

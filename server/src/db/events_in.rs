@@ -1,7 +1,7 @@
 use redb::{Database, TableDefinition, ReadableTable, ReadableDatabase};
 use serde::{Deserialize, Serialize};
 //mod initialize_db;
-use crate::telemetry::TelemetryEvent;
+use crate::telemetry::{TelemetryEvent, DetectionResult};
 use crate::detect::edr_detect_rules;
 
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -22,12 +22,14 @@ fn calculate_hash<T: Hash>(value: &T) -> u64 {
 }
 
 
-pub fn write_sigma_rule()
+// pub fn write_sigma_rule()
 
 
-pub fn write_event(event: TelemetryEvent) -> Result<(), Box<dyn std::error::Error>>{
+pub fn write_event(mut event: TelemetryEvent) -> Result<(), Box<dyn std::error::Error>>{
     println!("Starting write");
     let event_id = calculate_hash(&event);
+    event.analysis_result.sigma_results = crate::detect::edr_detect_rules::match_sigma_rule(&event);
+    //event.analysis_result.yara_results = pass;
     let write_txn = DB.begin_write().unwrap();
     {
         let mut table = write_txn.open_table(EVENTS_TABLE)?;
@@ -42,7 +44,10 @@ pub fn write_event(event: TelemetryEvent) -> Result<(), Box<dyn std::error::Erro
         table.insert(event_id, &bytes.as_slice())?;
     }
     write_txn.commit()?;
-    event.analysis_result.sigma_results = crate::detect::edr_detect_rules::match_sigma_rule(&event);
+    // event.analysis_result.sigma_results = crate::detect::edr_detect_rules::match_sigma_rule(&event);
+    // event.analysis_result.sigma_results = vec!(DetectionResult{rule_id:"Hello".into(), rule_name:"Hii".into()});
+
+    //println!("{:?}",&event);
 
 
     // Ok(())
