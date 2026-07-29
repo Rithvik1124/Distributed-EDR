@@ -29,7 +29,18 @@ pub fn write_event(mut event: TelemetryEvent) -> Result<(), Box<dyn std::error::
     println!("Starting write");
     let event_id = calculate_hash(&event);
     event.analysis_result.sigma_results = crate::detect::edr_detect_rules::match_sigma_rule(&event);
-    //event.analysis_result.yara_results = pass;
+    
+    event.analysis_result.yara_results = Vec::new();
+
+    match event.event_type.as_str() {
+        "Execve" | "Execveat" | "Unlinkat" | "Renameat" | "Renameat2" => {
+            if !event.filename.trim().is_empty() {
+                event.analysis_result.yara_results = crate::detect::edr_detect_rules::match_yara_rule(&event.filename);
+            }
+        }
+        _ => {}
+    }
+
     let write_txn = DB.begin_write().unwrap();
     {
         let mut table = write_txn.open_table(EVENTS_TABLE)?;
