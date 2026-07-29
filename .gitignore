@@ -4,3 +4,4 @@ todo.md
 log.md
 /client/target/*
 /server/target/*
+.vscode/

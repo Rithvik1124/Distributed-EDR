@@ -11,11 +11,19 @@ use yara_x;
 
 #[warn(unused_variables)]
 
-pub fn match_yara_rule(file_dir: &str){
-    let mut file = fs::File::open(file_dir).unwrap();    
+pub fn match_yara_rule(file_dir: &str) -> Vec<DetectionResult> {
+    let mut detected: Vec<DetectionResult> = Vec::new();
+    if file_dir.trim().is_empty() {
+        return detected;
+    }
+    //println!("Opening file: {:?}", std::path::Path::new(file_dir));
+    let mut file = match fs::File::open(file_dir) {
+        Ok(file) => file,
+        Err(_) => return detected,
+    };    
     let mut data = Vec::new();
     file.read_to_end(&mut data).unwrap();
-    println!("Contents:{:?}",data);
+    //println!("Contents:{:?}",data);
     let mut scanner = yara_x::Scanner::new(&YARA_RULES);
 
     let results = scanner.scan(&data).unwrap();
@@ -23,9 +31,16 @@ pub fn match_yara_rule(file_dir: &str){
     // Scan some data.
     //let results = scanner.scan(contents.as_bytes()).unwrap();
 
-    if results.matching_rules().len() == 1{
-        println!("Matches");
+    for rule in results.matching_rules() {
+        let detect = DetectionResult {
+            rule_id: rule.identifier().to_string(),
+            rule_name: rule.identifier().to_string(), // or rule.metadata()["description"] if available
+        };
+
+        detected.push(detect);
     }
+
+    return detected
 }
 
 pub fn match_sigma_rule(event: &TelemetryEvent)-> Vec<DetectionResult>{
