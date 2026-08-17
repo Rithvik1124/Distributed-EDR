@@ -1,11 +1,6 @@
 mod detect;
 use core::time::Duration;
-use std::collections::HashMap;
 use std::fs;
-use millisecond::Millisecond;
-use millisecond::MillisecondFormatter;
-use serde_json::Value;
-use serde_json::json;
 use std::mem::MaybeUninit;
 use libbpf_rs::RingBufferBuilder;
 use libbpf_rs::skel::SkelBuilder as _;
@@ -16,23 +11,17 @@ use structopt::StructOpt;
 use chrono::{DateTime, Utc};
 use trial::*;
 use plain::Plain;
-use crate::detect::edr_detect_rules;
 use libbpf_rs::skel::Skel;
 use anyhow::{anyhow, bail, Context, Result};
 use reqwest::Client;
-use sigma_rust::{Event, Rule, event_from_json, rule_from_yaml};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use libc::{clock_gettime, timespec, CLOCK_MONOTONIC};
-//might be useful, don't remove
-//use std::fs;
-//use std::net::Ipv4Addr;
-//use std::path::Path;
+
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-//use object::Object;
-//use object::ObjectSymbol;
+
 
 mod trial {
     include!("trial.skel.rs");

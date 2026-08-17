@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 //mod initialize_db;
 use crate::telemetry::{TelemetryEvent, DetectionResult};
 use crate::detect::edr_detect_rules;
-
+use reqwest::Client;
+use tokio::sync::mpsc;
 use std::hash::{DefaultHasher, Hash, Hasher};
 const EVENTS_TABLE: TableDefinition<u64, &[u8]> = TableDefinition::new("events_in");
 use std::sync::LazyLock;
@@ -23,7 +24,29 @@ fn calculate_hash<T: Hash>(value: &T) -> u64 {
 
 
 // pub fn write_sigma_rule()
+fn get_yara(file_dir: String){
+    let client = Client::new();
 
+    let (tx, mut rx) = mpsc::channel::<String>(1024); // 1024 is the channel capacity, both want EVent here
+
+    let http_client = client.clone();
+    tokio::spawn(async move {
+        while let Some(some_event) = rx.recv().await {
+            if let Err(e) = http_client
+                .post("http://127.0.0.1:3000/yara-check")
+                .json(&some_event)
+                .send()
+                .await
+            {
+                eprintln!("Failed to send telemetry: {}", e);
+            }
+        }
+    });
+
+    if let Err(e) = tx.try_send(file_dir) {
+        eprintln!("Telemetry queue full, dropping event: {}", e);
+    }
+}
 
 pub fn write_event(mut event: TelemetryEvent) -> Result<(), Box<dyn std::error::Error>>{
     println!("Starting write");
@@ -35,7 +58,7 @@ pub fn write_event(mut event: TelemetryEvent) -> Result<(), Box<dyn std::error::
     match event.event_type.as_str() {
         "Execve" | "Execveat" | "Unlinkat" | "Renameat" | "Renameat2" => {
             if !event.filename.trim().is_empty() {
-                event.analysis_result.yara_results = crate::detect::edr_detect_rules::match_yara_rule(&event.filename);
+                event.analysis_result.yara_results = crate::detect::edr_detect_rules::match_yara_rule(&event.filename.to_string());
             }
         }
         _ => {}
@@ -55,19 +78,12 @@ pub fn write_event(mut event: TelemetryEvent) -> Result<(), Box<dyn std::error::
         table.insert(event_id, &bytes.as_slice())?;
     }
     write_txn.commit()?;
-    // event.analysis_result.sigma_results = crate::detect::edr_detect_rules::match_sigma_rule(&event);
-    // event.analysis_result.sigma_results = vec!(DetectionResult{rule_id:"Hello".into(), rule_name:"Hii".into()});
-
-    //println!("{:?}",&event);
-
-
-    // Ok(())
 
     let read_txn = DB.begin_read()?;
     println!("Opened DB");
     let table = read_txn.open_table(EVENTS_TABLE)?;
-    // // Clone the bytes to own them outside the transaction scope.
-    // // redb values borrow from the transaction and cannot outlive it.
+    // Clone the bytes to own them outside the transaction scope.
+    // redb values borrow from the transaction and cannot outlive it.//
     let stored_bytes = table.get(event_id)?.map(|v| v.value().to_vec());
 
     if let Some(bytes) = stored_bytes {

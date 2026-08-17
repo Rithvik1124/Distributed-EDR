@@ -47,6 +47,17 @@ async fn publish(
     "Event queued successfully"
 }
 
+
+async fn yara_event_in(
+    Json(event): Json<String>,
+) -> &'static str {
+    println!("Received YARA event: {}", event);
+
+    // Process the string here.
+
+    "YARA event received"
+}
+
 #[tokio::main]
 async fn main() {
     let (tx, rx) = mpsc::channel::<TelemetryEvent>(100_000);
@@ -75,6 +86,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/publish", post(publish))
+        .route("/yara-check", post(yara_event_in))
         .with_state(AppState { sender: tx });
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
