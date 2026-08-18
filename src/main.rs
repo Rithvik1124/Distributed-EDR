@@ -1,26 +1,22 @@
-mod detect;
+mod node_roles;
 use core::time::Duration;
-use std::fs;
-use std::mem::MaybeUninit;
-use libbpf_rs::RingBufferBuilder;
-use libbpf_rs::skel::SkelBuilder as _;
-use libbpf_rs::skel::OpenSkel as _;
-use libbpf_rs::MapCore;
-use libbpf_rs::MapFlags;
+use std::{fs, mem::MaybeUninit, 
+        time::{SystemTime, UNIX_EPOCH}, 
+    sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use libbpf_rs::{RingBufferBuilder, skel::SkelBuilder as _, 
+                skel::OpenSkel as _, MapCore,
+                MapFlags, skel::Skel};
+
+
 use structopt::StructOpt;
 use chrono::{DateTime, Utc};
 use trial::*;
 use plain::Plain;
-use libbpf_rs::skel::Skel;
 use anyhow::{anyhow, bail, Context, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
-use std::time::{SystemTime, UNIX_EPOCH};
 use libc::{clock_gettime, timespec, CLOCK_MONOTONIC};
-
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 
 mod trial {
@@ -28,7 +24,6 @@ mod trial {
 }
 
 // Timestamp doesnt work
-
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug,)]

@@ -83,7 +83,7 @@ pub fn write_event(mut event: TelemetryEvent) -> Result<(), Box<dyn std::error::
     println!("Opened DB");
     let table = read_txn.open_table(EVENTS_TABLE)?;
     // Clone the bytes to own them outside the transaction scope.
-    // redb values borrow from the transaction and cannot outlive it.//
+    // redb values borrow from the transaction and cannot outlive it.//  
     let stored_bytes = table.get(event_id)?.map(|v| v.value().to_vec());
 
     if let Some(bytes) = stored_bytes {
