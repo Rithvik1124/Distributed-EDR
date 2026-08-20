@@ -3,3 +3,4 @@ todo.md
 log.md
 /server/target/*
 .vscode/
+/testruns/*
