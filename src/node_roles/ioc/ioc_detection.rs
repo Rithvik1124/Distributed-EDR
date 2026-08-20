@@ -11,11 +11,6 @@ use std::{
 
 use reqwest::blocking::get;
 
-enum FileHashStatus{
-    Benign,
-    Malicious
-}
-
 #[derive(PartialEq, Debug)]
 
 pub enum FileHashStatus {

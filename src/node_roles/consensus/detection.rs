@@ -12,6 +12,19 @@ enum Action {
     Log,
     Forward,
 }
+
+#[derive(PartialEq, Debug)]
+
+pub enum FileHashStatus {
+    HashHit,
+    NoHashMatched,
+}
+
+pub enum BlockedIPStatus{
+    IPHit,
+    NoIPMatched,
+}
+
 fn decide(event: &TelemetryEvent, cache: &mut LruCache) -> Action {
 
     let sig = hash(event);
