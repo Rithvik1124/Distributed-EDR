@@ -1,78 +1,97 @@
-use std::fs;
-use serde_json::{json,Value};
-use std::io::Read;
-//use std::io::prelude::*;
-use crate::detect::{SIGMA_RULES, YARA_RULES};
-use crate::telemetry::{TelemetryEvent, DetectionResult};
-use sigma_rust::{Event, Rule, event_from_json, rule_from_yaml};
-use yara_x;
-// use yaml_rust::yaml::{Hash, Yaml};
-// use yaml_rust::YamlLoader;
+use std::collections::HashSet;
 
-#[warn(unused_variables)]
-
-pub fn match_yara_rule(file_dir: &str) -> Vec<DetectionResult> {
-    let mut detected: Vec<DetectionResult> = Vec::new();
-    if file_dir.trim().is_empty() {
-        return detected;
-    }
-    //println!("Opening file: {:?}", std::path::Path::new(file_dir));
-    let mut file = match fs::File::open(file_dir) {
-        Ok(file) => file,
-        Err(_) => return detected,
-    };    
-    let mut data = Vec::new();
-    file.read_to_end(&mut data).unwrap();
-    //println!("Contents:{:?}",data);
-    let mut scanner = yara_x::Scanner::new(&YARA_RULES);
-
-    let results = scanner.scan(&data).unwrap();
-
-    // Scan some data.
-    //let results = scanner.scan(contents.as_bytes()).unwrap();
-
-    for rule in results.matching_rules() {
-        let detect = DetectionResult {
-            rule_id: rule.identifier().to_string(),
-            rule_name: rule.identifier().to_string(), // or rule.metadata()["description"] if available
-        };
-
-        detected.push(detect);
-    }
-
-    return detected
+/// Unified detection output from all engines
+#[derive(Debug, Clone)]
+pub enum Signal {
+    Sigma { rule_id: String },
+    IOC { kind: String, value: String },
+    Yara { rule: String },
 }
 
-pub fn match_sigma_rule(event: &TelemetryEvent)-> Vec<DetectionResult>{
-    let mut detected: Vec<DetectionResult> = Vec::new();
-    let mut sigma_event:Event = Event::new();
-    sigma_event.insert("Image",event.filename.clone());
-    sigma_event.insert("CommandLine",event.comm.clone());
-    for rule in SIGMA_RULES.iter() {
-    
+/// Final decision from consensus layer
+#[derive(Debug, PartialEq)]
+pub enum Decision {
+    Forward,
+    ForwardLowPriority,
+    Drop,
+}
 
-    if !rule.is_match(&sigma_event) {
-        //println!("No event found match {:?}", rule);
-        continue;
+/// Dedup key (prevents spam / replay storms)
+fn event_signature(pid: u32, filename: &str, event_type: &str) -> String {
+    format!("{pid}:{filename}:{event_type}")
+}
+
+/// Consensus engine state
+pub struct ConsensusEngine {
+    /// used for deduplication
+    seen: HashSet<String>,
+    /// how many recent events to keep (simple bounded memory)
+    max_cache: usize,
+}
+
+impl ConsensusEngine {
+    pub fn new(max_cache: usize) -> Self {
+        Self {
+            seen: HashSet::new(),
+            max_cache,
+        }
     }
-    let mut detect:DetectionResult = DetectionResult{
-       rule_id : rule.id.clone().unwrap_or_default(),
-       rule_name: rule.title.to_owned(),
-    };
-    detected.push(detect);
+
+    /// MAIN CONSENSUS FUNCTION
+    pub fn decide(
+        &mut self,
+        pid: u32,
+        filename: &str,
+        event_type: &str,
+        signals: Vec<Signal>,
+    ) -> Decision {
+
+        // -------------------------
+        // 1. Deduplication layer
+        // -------------------------
+        let sig = event_signature(pid, filename, event_type);
+
+        if self.seen.contains(&sig) {
+            return Decision::Drop;
+        }
+
+        self.seen.insert(sig.clone());
+
+        // naive bounded cleanup
+        if self.seen.len() > self.max_cache {
+            self.seen.clear();
+        }
+
+        // -------------------------
+        // 2. Signal classification
+        // -------------------------
+        let mut has_ioc = false;
+        let mut has_yara = false;
+        let mut has_sigma = false;
+
+        for s in &signals {
+            match s {
+                Signal::IOC { .. } => has_ioc = true,
+                Signal::Yara { .. } => has_yara = true,
+                Signal::Sigma { .. } => has_sigma = true,
+            }
+        }
+
+        // -------------------------
+        // 3. Decision rules (IMPORTANT PART)
+        // -------------------------
+
+        // RULE 1: strongest evidence wins immediately
+        if has_ioc || has_yara {
+            return Decision::Forward;
+        }
+
+        // RULE 2: only behavioral signals
+        if has_sigma {
+            return Decision::ForwardLowPriority;
+        }
+
+        // RULE 3: nothing meaningful
+        Decision::Drop
+    }
 }
-    return detected
-}
-// Rule { title: "Triple Cross eBPF Rootkit Install Commands", id: Some("22236d75-d5a0-4287-bf06-c93b1770860f"), 
-// name: None, related: None, taxonomy: None, status: Some(Test), description: Some("Detects default install commands of the Triple Cross eBPF rootkit based on the \"deployer.sh\" script"), 
-// license: None, author: Some("Nasreddine Bencherchali (Nextron Systems)"), 
-// references: Some(["https://github.com/h3xduck/TripleCross/blob/1f1c3e0958af8ad9f6ebe10ab442e75de33e91de/apps/deployer.sh"]), 
-// date: Some("2022-07-05"), modified: None, logsource: Logsource { category: Some("process_creation"), product: Some("linux"), service: 
-// None, definition: None }, detection: Detection { selections: {"selection": Field([FieldGroup { fields: [Field { name: "CommandLine", 
-// values: [WildcardPattern([Star, Pattern(['.', '/', 't', 'a', 'r', 'g', 'e', 't', '/', 'd', 'e', 'b', 'u', 'g', '/', 'e', 'd', 'r', '-', 'a', 'g', 'e', 'n', 't']), Star])], 
-// modifier: Modifier { match_all: true, fieldref: false, cased: false, exists: None, match_modifier: Some(Contains), value_transformer: None } }, 
-// Field { name: "CommandLine", 
-// values: [WildcardPattern([Star, Pattern(['.', '/', 't', 'a', 'r', 'g', 'e', 't', '/', 'd', 'e', 'b', 'u', 'g', '/', 'e', 'd', 'r', '-', 'a', 'g', 'e', 'n', 't']), Star])], 
-// modifier: Modifier { match_all: false, fieldref: false, cased: false, exists: None, match_modifier: Some(Contains), value_transformer: None } }] }])}, 
-// condition: "selection", ast: Selection("selection") }, fields: None, 
-// falsepositives: Some(["Unlikely"]), level: Some(High), tags: Some(["attack.stealth", "attack.t1014"]), custom_fields: {} }

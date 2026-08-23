@@ -3,26 +3,26 @@ use std::hash::{ Hash, Hasher};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Hash, Debug)]
-// struct SigmaResults{
-//     rule_id: String,
-//     rule_name: String,
-//     rule_triggers: String,
-// }
-// #[derive(Serialize, Deserialize, Hash, Debug)]
+struct SigmaResults{
+    rule_id: String,
+    rule_name: String,
+    rule_triggers: String,
+}
+#[derive(Serialize, Deserialize, Hash, Debug)]
 
-// struct YaraResults{
-//     rule_id: String,
-//     rule_name: String,
-//     rule_triggers: String,
-// }
-// #[derive(Serialize, Deserialize, Hash, Debug)]
+struct YaraResults{
+    rule_id: String,
+    rule_name: String,
+    rule_triggers: String,
+}
+#[derive(Serialize, Deserialize, Hash, Debug)]
 
-// struct IOCResults{
-//     rule_id: String,
-//     rule_name: String,
-//     rule_triggers: String,
-// }
-//#[derive(Serialize, Deserialize)]
+struct IOCResults{
+    rule_id: String,
+    rule_name: String,
+    rule_triggers: String,
+}
+#[derive(Serialize, Deserialize, Debug)]
 
 pub struct DetectionResult{
     pub rule_id: String,
@@ -71,11 +71,11 @@ impl Hash for TelemetryEvent {
     }
 }
 
-// #[derive(Serialize, Deserialize, Hash, Debug)]
-// pub struct FullEvent{
-//     pub telemetry: TelemetryEvent,
-//     pub sigma_results: Option<AnalysisResult>,
-//     pub yara_results: Option<AnalysisResult>,
-//     pub ioc_results: Option<AnalysisResult>,
-//     pub time_stamp: String,
-// }
+#[derive(Serialize, Deserialize, Hash, Debug)]
+pub struct FullEvent{
+    pub telemetry: TelemetryEvent,
+    pub sigma_results: Option<AnalysisResult>,
+    pub yara_results: Option<AnalysisResult>,
+    pub ioc_results: Option<AnalysisResult>,
+    pub time_stamp: String,
+}
