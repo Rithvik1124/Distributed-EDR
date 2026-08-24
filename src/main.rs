@@ -6,8 +6,6 @@ use std::{fs, mem::MaybeUninit,
 use libbpf_rs::{RingBufferBuilder, skel::SkelBuilder as _, 
                 skel::OpenSkel as _, MapCore,
                 MapFlags, skel::Skel};
-
-
 use structopt::StructOpt;
 use chrono::{DateTime, Utc};
 use trial::*;
@@ -17,7 +15,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use libc::{clock_gettime, timespec, CLOCK_MONOTONIC};
-
+use crate::node_roles::telemetry::telemetry::TelemetryEvent;
 
 mod trial {
     include!("trial.skel.rs");
@@ -46,42 +44,6 @@ pub struct GenEvent {
     pub time_stamp: u64,
 } 
 
-#[derive(Default, Serialize, Deserialize,Debug, Hash)]
-
-struct DetectionResult{
-    rule_id: String,
-    rule_name: String,
-    //rule_triggers: String,
-}
-
-#[derive(Default, Serialize, Deserialize,Debug, Hash)]
-struct AnalysisResult{
-    is_mal: bool,
-    sigma_results: Vec<DetectionResult>,
-    yara_results: Vec<DetectionResult>,
-    ioc_results: Vec<DetectionResult>,
-}
-
-#[derive(Default, Debug, Serialize, Deserialize)]
-pub struct TelemetryEvent {     // this struct can be eliminated by adding a conversion method to GenEvent - no, it can't
-    pub event_type: String,         
-    pub pid: u32,
-    pub ppid: u32,
-    pub uid: u32,
-    pub gid: u32,
-    pub tgid: u64,
-
-    pub comm: String,
-    pub filename: String,
-
-    pub dst_ip: String, //max 15 bytes
-    pub dst_port: String, //max 5 bytes
-
-    pub time_stamp: String,
-    pub analysis_result: AnalysisResult,
-
-
-} 
 
 
 /*
@@ -320,7 +282,6 @@ async fn main() -> Result<()> {
     let mut skel = open_skel.load()?;
     let key: u32 = 0;
     let value: u32 = std::process::id();
-
     skel.maps
     .agent_pid_map
     .update(&key.to_ne_bytes(), &value.to_ne_bytes(), MapFlags::ANY)?;

@@ -1,58 +1,59 @@
-use std::fs;
-use serde_json::{json,Value};
-use std::io::Read;
-//use std::io::prelude::*;
-use crate::detect::{SIGMA_RULES, YARA_RULES};
-use crate::telemetry::{TelemetryEvent, DetectionResult};
-use sigma_rust::{Event, Rule, event_from_json, rule_from_yaml};
-use yara_x;
+use lru::LruCache;
+use crate::{node_roles::{consensus::*, telemetry::telemetry::TelemetryEvent}};
 
-enum Action {
-    Drop,
-    Log,
-    Forward,
+#[derive(Debug, PartialEq)]
+enum Decision{
+    Forward(TelemetryEvent),
+    Log(TelemetryEvent),
+    Drop(TelemetryEvent),
 }
 
-#[derive(PartialEq, Debug)]
+impl Decision{
+    fn execute(self) {
+        match self {
+            Decision::Log(event) => {
+                println!("logging event");
+                // log_event(event);
+            }
 
-pub enum FileHashStatus {
-    HashHit,
-    NoHashMatched,
+            Decision::Drop(event) => {
+                drop_redundant_event(event);
+            }
+
+            Decision::Forward(event) => {
+                println!("forwarding event");
+                log_event(&event);
+            }
+        }
+    }
 }
 
-pub enum BlockedIPStatus{
-    IPHit,
-    NoIPMatched,
-}
 
-fn decide(event: &TelemetryEvent, cache: &mut LruCache) -> Action {
 
-    let sig = hash(event);
 
-    // 1. Strong signals always forward
+
+fn decide(
+    event: &TelemetryEvent,
+    cache: &mut LruCache<u64, ()>
+) -> Decision{
+
+    let sig = hash_event(event);
+
     if !event.analysis_result.yara_results.is_empty()
         || !event.analysis_result.ioc_results.is_empty()
     {
-        return Forward;
+        return Decision::Forward(event.clone());
     }
 
-    // 2. Redundancy check
     if cache.contains(&sig) {
-        return Drop;
+        return Decision::Drop(event.clone());
     }
 
-    cache.insert(sig);
+    cache.put(sig, ());
 
-    // 3. Anomaly / novelty checks
-    let anomalous =
-        event.comm.is_empty()
-        || event.filename.is_empty()
-        || event.event_type == "Execveat";
-
-    if anomalous {
-        return Forward;
+    if event.comm.is_empty() || event.filename.is_empty() {
+        return Decision::Log(event.clone());
     }
 
-    // 4. Default noise suppression
-    Drop
+    Decision::Forward(event.clone())
 }

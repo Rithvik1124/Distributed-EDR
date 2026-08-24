@@ -1,10 +1,10 @@
-use crate::ioc::{BLOCKLIST_IP_IOC_MAP, FILE_HASHES_MAP};
+use crate::node_roles::ioc::{BLOCKLIST_IP_IOC_MAP, FILE_HASHES_MAP};
 use sha256::{digest, try_digest};
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader},
     fs::File,
-    net::Ipv4Addr,
+    net::IpAddr,
     sync::LazyLock,
     path::Path,
 };
@@ -24,16 +24,27 @@ pub enum BlockedIPStatus{
 }
 
 
+struct BlockedIPResponse{
+    status: BlockedIPStatus,
+    mal_ip: IpAddr,
+}
+
 fn get_file_hash(dir: &str) -> String {
     let input = Path::new(dir);
     try_digest(input).unwrap()
 }
 
-fn blocked_ip_check(ip: IpAddr)-> BlockedIPStatus{
-    if BLOCKLIST_IP_IOC_MAP.contains_key(&file_hash) {
-        BlockedIPStatus::IPHit
+fn blocked_ip_check(ip: IpAddr)-> BlockedIPResponse{
+    if BLOCKLIST_IP_IOC_MAP.contains_key(&ip) {
+        BlockedIPResponse{
+            status: BlockedIPStatus::IPHit,
+            mal_ip: ip,
+        }
     } else {
-        BlockedIPStatus::NoIPMatched
+        BlockedIPResponse{
+            status: BlockedIPStatus::NoIPMatched,
+            mal_ip: ip,
+        }
     }
 }
 

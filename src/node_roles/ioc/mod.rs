@@ -1,12 +1,12 @@
+pub mod ioc_detection;
 use std::{
-    collections::HashMap, fs::{File}, hash::Hash, net::Ipv4Addr, sync::LazyLock, io::{BufRead, BufReader}
+    collections::HashMap, fs::{File}, hash::Hash, net::IpAddr, sync::LazyLock, io::{BufRead, BufReader}
 };
-
 use reqwest::blocking::get;
 
 /// Global IOC map:
 /// IPSum -> threat level (1–8)
-pub static BLOCKLIST_IP_IOC_MAP: LazyLock<HashMap<Ipv4Addr, u8>> = LazyLock::new(|| {
+pub static BLOCKLIST_IP_IOC_MAP: LazyLock<HashMap<IpAddr, u8>> = LazyLock::new(|| {
     load_ipsum_ioc()
 });
 
@@ -24,7 +24,7 @@ fn load_file_hashes(dir: &str) -> HashMap<String, u8> {
 
     for line_result in reader.lines() {
         let line = line_result.unwrap();
-        let line = line.trim().to_string(); // FIX: must own String
+        let line = line.trim().to_owned(); // FIX: must own String
 
         file_hashes.insert(line, 1);
     }
@@ -33,8 +33,8 @@ fn load_file_hashes(dir: &str) -> HashMap<String, u8> {
 }
 
 
-fn load_ipsum_ioc() -> HashMap<Ipv4Addr, u8> {
-    let mut map: HashMap<Ipv4Addr, u8> = HashMap::new();
+fn load_ipsum_ioc() -> HashMap<IpAddr, u8> {
+    let mut map: HashMap<IpAddr, u8> = HashMap::new();
 
     for level in 1..=8 {
         let url = format!(
@@ -57,7 +57,7 @@ fn load_ipsum_ioc() -> HashMap<Ipv4Addr, u8> {
                 continue;
             }
 
-            if let Ok(ip) = ip_str.parse::<Ipv4Addr>() {
+            if let Ok(ip) = ip_str.parse::<IpAddr>() {
                 map.insert(ip, level as u8);
             }
         }
