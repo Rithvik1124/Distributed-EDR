@@ -13,7 +13,6 @@ impl Decision{
         match self {
             Decision::Log(event) => {
                 println!("logging event");
-                // log_event(event);
             }
 
             Decision::Drop(event) => {
