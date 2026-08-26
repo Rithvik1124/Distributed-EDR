@@ -2,7 +2,6 @@ pub mod ioc;
 pub mod sigma;
 pub mod yara;
 pub mod consensus;
-pub mod telemetry;
 pub mod transport;
 use std::{ sync::{Arc, LazyLock, RwLock}};
 use lru::LruCache;

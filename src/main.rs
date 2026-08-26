@@ -1,4 +1,4 @@
-mod node_roles;
+mod telemetry;
 use core::time::Duration;
 use std::{fs, mem::MaybeUninit, 
         time::{SystemTime, UNIX_EPOCH}, 
@@ -15,7 +15,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use libc::{clock_gettime, timespec, CLOCK_MONOTONIC};
-use crate::node_roles::telemetry::TelemetryEvent;
+use crate::telemetry::TelemetryEvent;
 
 mod trial {
     include!("trial.skel.rs");
