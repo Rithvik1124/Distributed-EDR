@@ -1,5 +1,5 @@
 use lru::LruCache;
-use crate::{node_roles::{consensus::*, telemetry::telemetry::TelemetryEvent}};
+use crate::node_roles::{consensus::*, telemetry::TelemetryEvent, transport::client::ServerClient};
 
 #[derive(Debug, PartialEq)]
 enum Decision{
@@ -9,10 +9,10 @@ enum Decision{
 }
 
 impl Decision{
-    fn execute(self) {
+    fn execute(self, server: &ServerClient) {
         match self {
             Decision::Log(event) => {
-                println!("logging event");
+                log_event(&event);
             }
 
             Decision::Drop(event) => {
@@ -20,15 +20,12 @@ impl Decision{
             }
 
             Decision::Forward(event) => {
-                println!("forwarding event");
-                log_event(&event);
+                server.send_event(&event);
+
             }
         }
     }
 }
-
-
-
 
 
 fn decide(

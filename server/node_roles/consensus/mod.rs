@@ -2,8 +2,7 @@ pub mod detection;
 use std::{ fs::{File, exists}, io::prelude::*};
 use chrono::{Local, Utc, NaiveDate};
 use std::hash::{Hasher,DefaultHasher, Hash};
-use crate::node_roles::{telemetry::telemetry::TelemetryEvent, CACHE};
-
+use crate::node_roles::{telemetry::TelemetryEvent, CACHE};
 
 fn log_event(event: &TelemetryEvent)->std::io::Result<()>{
     let dt1: NaiveDate = Local::now().date_naive();
@@ -33,10 +32,6 @@ fn drop_redundant_event(event: TelemetryEvent){
 }
 
 
-fn send_event_to_server(event: TelemetryEvent){
-
-
-}
 
 fn hash_event(event: &TelemetryEvent) -> u64 {
     let mut hasher = DefaultHasher::new();

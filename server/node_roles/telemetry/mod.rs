@@ -1,3 +1,4 @@
+pub mod telemetry;
 //because using TelemetryEvent separately in both main.rs and events.rs gave error
 use std::hash::{ Hash, Hasher};
 use serde::{Deserialize, Serialize};

@@ -2,7 +2,7 @@ mod node_roles;
 use core::time::Duration;
 use std::{fs, mem::MaybeUninit, 
         time::{SystemTime, UNIX_EPOCH}, 
-    sync::{atomic::{AtomicBool, Ordering}, Arc}};
+        sync::{atomic::{AtomicBool, Ordering}, Arc}};
 use libbpf_rs::{RingBufferBuilder, skel::SkelBuilder as _, 
                 skel::OpenSkel as _, MapCore,
                 MapFlags, skel::Skel};
@@ -15,7 +15,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use libc::{clock_gettime, timespec, CLOCK_MONOTONIC};
-use crate::node_roles::telemetry::telemetry::TelemetryEvent;
+use crate::node_roles::telemetry::TelemetryEvent;
 
 mod trial {
     include!("trial.skel.rs");
