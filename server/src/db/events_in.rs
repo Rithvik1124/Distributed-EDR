@@ -9,6 +9,8 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 const EVENTS_TABLE: TableDefinition<u64, &[u8]> = TableDefinition::new("events_in");
 use std::sync::LazyLock;
 
+use crate::node_roles::{sigma::sigma_detection::match_sigma_rule, yara::yara_detection::match_yara_rule};
+
 // Was calling setdb in the function each time so turned it into static
 const PATH: &str = "events_in.redb";
 static DB: LazyLock<Database> = LazyLock::new(|| {
@@ -22,7 +24,7 @@ fn calculate_hash<T: Hash>(value: &T) -> u64 {
     hasher.finish()
 }
 
-
+// 🟡 dynamic ip yara requests
 // pub fn write_sigma_rule()
 fn get_yara(file_dir: String){
     let client = Client::new();
@@ -51,14 +53,14 @@ fn get_yara(file_dir: String){
 pub fn write_event(mut event: TelemetryEvent) -> Result<(), Box<dyn std::error::Error>>{
     println!("Starting write");
     let event_id = calculate_hash(&event);
-    event.analysis_result.sigma_results = crate::detect::edr_detect_rules::match_sigma_rule(&event);
+    event.analysis_result.sigma_results = match_sigma_rule(&event);
     
     event.analysis_result.yara_results = Vec::new();
 
     match event.event_type.as_str() {
         "Execve" | "Execveat" | "Unlinkat" | "Renameat" | "Renameat2" => {
             if !event.filename.trim().is_empty() {
-                event.analysis_result.yara_results = crate::detect::edr_detect_rules::match_yara_rule(&event.filename.to_string());
+                event.analysis_result.yara_results = match_yara_rule(&event.filename.to_string());
             }
         }
         _ => {}

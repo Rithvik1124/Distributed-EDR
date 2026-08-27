@@ -1,35 +1,21 @@
+mod db;
+mod node_roles;
+mod detect;
+mod handlers;
+mod telemetry;
+
+use crate::telemetry::TelemetryEvent;
+use crate::detect::edr_detect_rules;
+
 use axum::{
     extract::State,
     routing::post,
     Json,
     Router,
 };
-mod db;
-mod telemetry;
-use crate::telemetry::TelemetryEvent;
-use crate::detect::edr_detect_rules;
-mod detect;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
-
-// #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-// pub struct TelemetryEvent {
-//     pub event_type: String,
-//     pub pid: u32,
-//     pub ppid: u32,
-//     pub uid: u32,
-//     pub gid: u32,
-//     pub tgid: u64,
-
-//     pub comm: String,
-//     pub filename: String,
-
-//     pub dst_ip: String,
-//     pub dst_port: String,
-
-//     pub time_stamp: String,
-// }
 
 #[derive(Clone)]
 struct AppState {
@@ -56,6 +42,36 @@ async fn yara_event_in(
     // Process the string here.
 
     "YARA event received"
+}
+
+async fn ioc_event_in(
+    Json(event): Json<String>,
+) -> &'static str {
+    println!("Received IOC event: {}", event);
+
+    // Process the string here.
+
+    "IOC event received"
+}
+
+async fn sigma_event_in(
+    Json(event): Json<String>,
+) -> &'static str {
+    println!("Received Sigma event: {}", event);
+
+    // Process the string here.
+
+    "Sigma event received"
+}
+
+async fn consensus_event_in(
+    Json(event): Json<String>,
+) -> &'static str {
+    println!("Received Consensus event: {}", event);
+
+    // Process the string here.
+
+    "Consensus event received"
 }
 
 #[tokio::main]
@@ -87,6 +103,10 @@ async fn main() {
     let app = Router::new()
         .route("/publish", post(publish))
         .route("/yara-check", post(yara_event_in))
+        .route("/sigma-check", post(sigma_event_in))
+        .route("/ioc-check", post(ioc_event_in))
+        .route("/consensus-check", post(consensus_event_in))
+
         .with_state(AppState { sender: tx });
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")

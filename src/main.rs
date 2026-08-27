@@ -1,93 +1,27 @@
 mod telemetry;
+mod handlers;
 use core::time::Duration;
-use std::{fs, mem::MaybeUninit, 
+use std::{ mem::MaybeUninit, 
         time::{SystemTime, UNIX_EPOCH}, 
         sync::{atomic::{AtomicBool, Ordering}, Arc}};
 use libbpf_rs::{RingBufferBuilder, skel::SkelBuilder as _, 
                 skel::OpenSkel as _, MapCore,
                 MapFlags, skel::Skel};
 use structopt::StructOpt;
-use chrono::{DateTime, Utc};
 use trial::*;
-use plain::Plain;
 use anyhow::{anyhow, bail, Context, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use libc::{clock_gettime, timespec, CLOCK_MONOTONIC};
-use crate::telemetry::TelemetryEvent;
+use crate::telemetry::*;
+// use crate::handlers::*;
 
 mod trial {
     include!("trial.skel.rs");
 }
 
 // Timestamp doesnt work
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug,)]
-
-pub struct GenEvent {
-    pub event_type: u8,
-    pub pid: u32,
-    pub ppid: u32,
-    pub uid: u32,
-    pub gid: u32,
-
-    pub tgid: u64,
-
-    pub comm: [u8; 16],
-    pub filename: [u8; 512],
-
-    pub dst_ip: u32,
-    pub dst_port: u16,
-
-    pub time_stamp: u64,
-} 
-
-
-
-/*
-pub struct ProcEvent{
-    pub pid: u32,
-    pub ppid: u32,
-    
-    pub TargetFilename: [u8; 512],
-}*/
-
-
-unsafe impl Plain for GenEvent {}
-
-impl Default for GenEvent {
-    fn default() -> Self {
-        unsafe { std::mem::zeroed() }
-    }
-}
-
-
-// #[repr(C)]
-// #[derive(Clone, Copy)]
-// struct EventHeader{
-//     event_type: u8,
-// }
-
-/*
-#[repr(C)]
-
-struct FileEvent{
-    event_type: u8,
-    pid: u32, //done - 4 bytes]
-    filename: [u8; 512], //done - 512 bytes
-    operation: u8,
-}
-
-unsafe impl Plain for FileEvent {}
-
-impl Default for FileEvent {
-    fn default() -> Self {
-        unsafe { std::mem::zeroed() }
-    }
-}*/
-
 #[derive(Debug, StructOpt)]
 struct Command {
     /// verbose output
@@ -116,31 +50,7 @@ fn bump_memlock_rlimit() -> Result<()> {
 
     Ok(())
 }
-fn convert_result_to_string(x: &[u8]) -> String {
-    let mut output = String::new();
-
-    for i in 0..x.len(){
-        if x[i] == 0 {
-        break;
-    }
-        output.push_str(&format!("{}", x[i] as char));
-
-    }
-
-
-    return output;
-}
-
-fn nanosec_to_timestamp(monotonic_ns: u64, offset_ns: i128) -> String {
-    let unix_ns = monotonic_ns as i128 + offset_ns;
-
-    let timestamp = DateTime::<Utc>::from_timestamp_nanos(unix_ns as i64);
-
-    timestamp
-        .format("%Y-%m-%d %H:%M:%S%.3f UTC")
-        .to_string()
-}
-
+ 
 
 
 fn monotonic_to_unix_offset_ns() -> i128 {
@@ -164,82 +74,6 @@ fn monotonic_to_unix_offset_ns() -> i128 {
 
     unix_ns - mono_ns
 }
-
-
-/*
-
-fn check_event(event: &GenEvent){
-    let cmdline = match fs::read(format!("/proc/{}/cmdline", event.pid)) {
-    Ok(v) => v,
-    Err(_) => return , };
-    
-    let x = create_event(event, &mode).unwrap();
-    let rule_match = edr_detect_rules::match_rule(&x);
-    //if rule_match!=(){   
-    println!("Event:{:?} \n Rule:{:?}", &x, &rule_match);}
-*/
-
-
-
-
-
-fn make_event(buff_event: &GenEvent, offset_ns: i128)-> TelemetryEvent{
-    let mode :String= match buff_event.event_type {
-        10 => "Execve".to_string(),
-        11 => "Fork".to_string(),
-        12 => "Exit".to_string(),
-        13 => "Execveat".to_string(),
-        20 => "Unlinkat".to_string(),
-        21 => "Renameat".to_string(),
-        22=> "Renameat2".to_string(),
-        30 => "Connect".to_string(),
-        31 => "Accept".to_string(),
-        32 => "Bind".to_string(),
-        40 => "Mount".to_string(),
-        41 => "Unmount".to_string(),
-        50 => "Chown".to_string(),
-        51 => "Chmod".to_string(),  
-        _=> "Unknown".to_string(), 
-    };
-    let mut event = TelemetryEvent::default();
-    let cmdline = match fs::read(format!("/proc/{}/cmdline", buff_event.pid)) {
-        Ok(bytes) => convert_result_to_string(&bytes),
-        Err(_) => "cmdline expired".to_string(),
-    };
-        event.event_type = mode;
-        event.pid = buff_event.pid;
-        event.ppid = buff_event.ppid;
-        event.uid = buff_event.uid;
-        event.gid = buff_event.gid;
-        event.tgid = buff_event.tgid;
-        event.dst_ip = buff_event.dst_ip.to_string();
-        event.dst_port = buff_event.dst_port.to_string();
-        event.comm = cmdline;
-        event.pid = buff_event.pid;
-        event.filename = convert_result_to_string(&buff_event.filename);
-        event.time_stamp = nanosec_to_timestamp(buff_event.time_stamp, offset_ns);
-        
-    event
-    
-    
-}
-
-// pub struct TelemetryEvent {     // this struct can be eliminated by adding a conversion method to GenEvent
-//     pub event_type: String,         // then we can simply call the method instead of having to assign everythin manually in main block
-//     pub pid: u32,
-//     pub ppid: u32,
-//     pub uid: u32,
-//     pub gid: u32,
-//     pub tgid: u64,
-
-//     pub comm: String,
-//     pub filename: String,
-
-//     pub dst_ip: u32,
-//     pub dst_port: u16,
-
-//     pub time_stamp: u64,
-// } 
 
 
 #[tokio::main]

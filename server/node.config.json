@@ -1,0 +1,6 @@
+{
+    "Sigma":true,
+    "Consensus":true,
+    "IOC": true,
+    "Server": "SOME_IP"
+}

@@ -27,3 +27,6 @@ lru = "0.18.2"
 
 [build-dependencies]
 libbpf-cargo = "0.25"
+
+[workspace]
+members = ["server",]

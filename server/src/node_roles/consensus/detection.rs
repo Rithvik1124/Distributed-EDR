@@ -1,6 +1,6 @@
 use lru::LruCache;
-use crate::node_roles::{consensus::*, telemetry::TelemetryEvent, transport::client::ServerClient};
-
+use crate::node_roles::{consensus::*, transport::client::ServerClient};
+use crate::telemetry::TelemetryEvent;
 #[derive(Debug, PartialEq)]
 enum Decision{
     Forward(TelemetryEvent),

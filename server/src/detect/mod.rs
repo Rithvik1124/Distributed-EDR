@@ -1,10 +1,9 @@
 pub mod edr_detect_rules;
+
 use once_cell::sync::Lazy;
 use sigma_rust::Rule;
 use std::fs;
-//use std::iter::Scan;
 use yara_x::{self, Scanner};
-//use std::io::Read;
 
 
 fn load_sigma_rules(dir: &str) -> Vec<sigma_rust::Rule> {

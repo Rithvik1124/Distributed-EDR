@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-/// Unified detection output from all engines
+// Unified detection output from all engines
 #[derive(Debug, Clone)]
 pub enum Signal {
     Sigma { rule_id: String },
@@ -8,7 +8,7 @@ pub enum Signal {
     Yara { rule: String },
 }
 
-/// Final decision from consensus layer
+// Final decision from consensus layer
 #[derive(Debug, PartialEq)]
 pub enum Decision {
     Forward,
@@ -16,16 +16,11 @@ pub enum Decision {
     Drop,
 }
 
-/// Dedup key (prevents spam / replay storms)
-fn event_signature(pid: u32, filename: &str, event_type: &str) -> String {
-    format!("{pid}:{filename}:{event_type}")
-}
-
-/// Consensus engine state
+// Consensus engine state
 pub struct ConsensusEngine {
-    /// used for deduplication
+    // used for deduplication
     seen: HashSet<String>,
-    /// how many recent events to keep (simple bounded memory)
+    // how many recent events to keep (simple bounded memory)
     max_cache: usize,
 }
 
@@ -37,7 +32,7 @@ impl ConsensusEngine {
         }
     }
 
-    /// MAIN CONSENSUS FUNCTION
+    // MAIN CONSENSUS FUNCTION
     pub fn decide(
         &mut self,
         pid: u32,
@@ -94,4 +89,9 @@ impl ConsensusEngine {
         // RULE 3: nothing meaningful
         Decision::Drop
     }
+}
+
+// Dedup key (prevents spam / replay storms)
+fn event_signature(pid: u32, filename: &str, event_type: &str) -> String {
+    format!("{pid}:{filename}:{event_type}")
 }

@@ -1,6 +1,7 @@
 /target
 todo.md
 log.md
-/server/target/*
+/server/target/
 .vscode/
 /testruns/*
+*.redb
