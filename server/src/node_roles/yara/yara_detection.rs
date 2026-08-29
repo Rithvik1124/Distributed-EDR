@@ -1,20 +1,10 @@
 use std::fs;
 use serde::{Serialize, Deserialize};
 use std::io::Read;
-use crate::node_roles::yara::{YARA_RULES, yara_detection::YaraStatus::{NoRuleMatched, YaraHit}};
+use crate::node_roles::yara::YARA_RULES;
+use crate::telemetry::{YaraEventResponse, YaraStatus::{YaraHit, NoRuleMatched}};
 use yara_x::{Scanner, Rules};
 
-#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
-pub enum YaraStatus {
-    YaraHit,
-    #[default]
-    NoRuleMatched,
-}
-#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
-pub struct YaraEventResponse{
-    pub status: YaraStatus,
-    pub rule_matched: Vec<String>,
-}
 
 
 // !!! FIX THIS BOYYY

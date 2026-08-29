@@ -2,20 +2,33 @@ use crate::handlers::*;
 use plain::Plain;
 use std::{hash::{ Hash, Hasher}, fs};
 use serde::{Deserialize, Serialize};
+use sigma_rust::Rule;
+
 
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
-pub struct SigmaResults{
-    rule_id: String,
-    rule_name: String,
-    rule_triggers: String,
+pub enum SigmaStatus {
+    SigmaHit,
+    #[default]
+    NoRuleMatched,
 }
-#[derive(Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+pub struct SigmaEventResponse{
+    pub status: SigmaStatus,
+    pub rule_matched: Vec<String>,
+}
 
-pub struct YaraResults{
-    rule_id: String,
-    rule_name: String,
-    rule_triggers: String,
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+pub enum YaraStatus {
+    YaraHit,
+    #[default]
+    NoRuleMatched,
 }
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+pub struct YaraEventResponse{
+    pub status: YaraStatus,
+    pub rule_matched: Vec<String>,
+}
+
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 
 pub struct IOCResults{
@@ -28,8 +41,8 @@ pub struct IOCResults{
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub struct AnalysisResult{
     pub is_mal: bool,
-    pub sigma_results: Vec<SigmaResults>,
-    pub yara_results: Vec<YaraResults>,
+    pub sigma_results: SigmaEventResponse,
+    pub yara_results: YaraEventResponse,
     pub ioc_results: Vec<IOCResults>,
 }
 
@@ -49,6 +62,9 @@ pub struct TelemetryEvent {
     pub dst_port: String, //max 5 bytes
     pub time_stamp:String,
     pub analysis_result: AnalysisResult,
+    pub ioc_check: bool,
+    pub yara_check: bool,
+    pub sigma_check: bool,
 }
 
 impl Hash for TelemetryEvent {
