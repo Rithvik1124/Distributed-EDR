@@ -5,3 +5,4 @@ log.md
 .vscode/
 /testruns/*
 *.redb
+full_sha256.txt

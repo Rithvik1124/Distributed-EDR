@@ -35,7 +35,7 @@ fn decide(
 
     let sig = hash_event(event);
 
-    if !event.analysis_result.yara_results.is_empty()
+    if !event.analysis_result.yara_results.rule_matched.is_empty()
         || !event.analysis_result.ioc_results.is_empty()
     {
         return Decision::Forward(event.clone());

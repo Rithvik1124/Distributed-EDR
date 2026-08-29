@@ -1,54 +1,59 @@
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write, net::IpAddr};
+use std::{fs, net::IpAddr};
 
 const NODE_CONFIG_FILE: &str = "node.config.json";
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Copy)]
 enum Role {
     Sigma,
     IOC,
     Consensus,
 }
-#[derive(Deserialize, Serialize)]
+
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
-struct JSON{
+struct NodeConfig {
     sigma: bool,
     ioc: bool,
     consensus: bool,
     server_ip: IpAddr,
 }
 
-fn find_roles()-> Vec<Role> {
-    let mut roles: Vec<Role> = Vec::new();
-    let file = fs::File::open("node.config.json")
-        .expect("file should open read only");
-    let json: serde_json::Value = serde_json::from_reader(file)
-        .expect("file should be proper JSON");
-    if json.get("Sigma").is_some(){
-        roles.push(Role::Sigma);
-    }else if json.get("IOC").is_some(){
-        roles.push(Role::IOC);
-    }else if json.get("Consensus").is_some(){
-        roles.push(Role::Consensus);
-    } 
-    roles
+impl Default for NodeConfig {
+    fn default() -> Self {
+        Self {
+            sigma: false,
+            ioc: false,
+            consensus: false,
+            server_ip: "127.0.0.1".parse().unwrap(),
+        }
+    }
 }
 
-fn write_roles(body: &str){
-    let file = fs::File::open(NODE_CONFIG_FILE)
-        .expect("file should open read only");
-    let request = match serde_json::from_str::<Role>(body) {
-        Ok(req) => req,
-        // 🟡 Fix this to something relevant
-        Err(e) => {
-            req = JSON {
-                sigma: false,
-                ioc: false,
-                consensus: false,
-                server_ip: IpAddr::new()
-            };
-        }
+fn find_roles() -> Vec<Role> {
+    let file = match fs::File::open(NODE_CONFIG_FILE) {
+        Ok(file) => file,
+        Err(_) => return Vec::new(),
     };
-    let roles = serde_json::to_string(&request).unwrap();
-    file.write_all(roles.as_bytes()).expect("Should be able to write data");
+
+    let config: NodeConfig = match serde_json::from_reader(file) {
+        Ok(config) => config,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut roles = Vec::new();
+
+    if config.sigma {
+        roles.push(Role::Sigma);
+    }
+
+    if config.ioc {
+        roles.push(Role::IOC);
+    }
+
+    if config.consensus {
+        roles.push(Role::Consensus);
+    }
+
+    roles
 }

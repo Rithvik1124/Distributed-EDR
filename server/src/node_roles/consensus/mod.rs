@@ -2,7 +2,7 @@ pub mod detection;
 use std::{ fs::{File, exists}, io::prelude::*};
 use chrono::{Local, Utc, NaiveDate};
 use std::hash::{Hasher,DefaultHasher, Hash};
-use crate::node_roles::{telemetry::TelemetryEvent, CACHE};
+use crate::{telemetry::TelemetryEvent, node_roles::CACHE};
 
 fn log_event(event: &TelemetryEvent)->std::io::Result<()>{
     let dt1: NaiveDate = Local::now().date_naive();
