@@ -2,5 +2,8 @@
     "Sigma":true,
     "Consensus":true,
     "IOC": true,
-    "Server": "SOME_IP"
+    "Server": "SOME_IP", 
+    "Consensus_Server":"SOME_IP",
+    "Sigma_Server": "SOME_IP",
+    "IOC_Server":"SOME_IP"
 }

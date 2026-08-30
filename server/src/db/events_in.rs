@@ -92,50 +92,48 @@ pub fn find_all_checks_true(
 
 
 //Needs a re-write as node_roles already do all of this - requires a "wait then update" part
-pub fn write_event(
-    mut event: TelemetryEvent,
-) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Starting write");
+// pub fn write_event(mut event: TelemetryEvent,) -> Result<(), Box<dyn std::error::Error>> {
+//     println!("Starting write");
 
-    let event_id = calculate_hash(&event);
+//     let event_id = calculate_hash(&event);
 
-    event.analysis_result.sigma_results = match_sigma_rule(&event);
+//     event.analysis_result.sigma_results = match_sigma_rule(&event); //wait for sigma_results;
 
-    event.analysis_result.yara_results = Vec::new();
+//     event.analysis_result.yara_results = Vec::new(); //wait for yara results;
 
-    match event.event_type.as_str() {
-        "Execve" | "Execveat" | "Unlinkat" | "Renameat" | "Renameat2" => {
-            if !event.filename.trim().is_empty() {
-                event.analysis_result.yara_results =
-                    match_yara_rule(&event.filename.to_string());
-            }
-        }
-        _ => {}
-    }
+//     match event.event_type.as_str() {
+//         "Execve" | "Execveat" | "Unlinkat" | "Renameat" | "Renameat2" => {
+//             if !event.filename.trim().is_empty() {
+//                 event.analysis_result.yara_results =
+//                     match_yara_rule(&event.filename.to_string());
+//             }
+//         }
+//         _ => {}
+//     }
 
-    // Calculate the three boolean flags.
-    let flags = calculate_flags(&event);
+//     // Calculate the three boolean flags.
+//     let flags = calculate_flags(&event);
 
-    let write_txn = DB.begin_write()?;
+//     let write_txn = DB.begin_write()?;
 
-    {
-        let mut events_table = write_txn.open_table(EVENTS_TABLE)?;
-        let mut flags_table = write_txn.open_table(FLAGS_INDEX)?;
+//     {
+//         let mut events_table = write_txn.open_table(EVENTS_TABLE)?;
+//         let mut flags_table = write_txn.open_table(FLAGS_INDEX)?;
 
-        // Serialize event.
-        let bytes = bincode::serde::encode_to_vec(
-            &event,
-            bincode::config::standard(),
-        )?;
+//         // Serialize event.
+//         let bytes = bincode::serde::encode_to_vec(
+//             &event,
+//             bincode::config::standard(),
+//         )?;
 
-        // Store the actual event.
-        events_table.insert(event_id, bytes.as_slice())?;
-        flags_table.insert((flags, event_id), ())?;
-    }
+//         // Store the actual event.
+//         events_table.insert(event_id, bytes.as_slice())?;
+//         flags_table.insert((flags, event_id), ())?;
+//     }
 
-    write_txn.commit()?;
+//     write_txn.commit()?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 // 29/08 - Add wait and check part for consensus check

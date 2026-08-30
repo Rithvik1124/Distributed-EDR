@@ -14,3 +14,5 @@ true  true  true       7
 ```
 ## What we need to do
 - Find events who have got all 2 checks then run a consensus check
+
+Long term goal would be to integrate this with some better telemetry handling microservices like elastic, maybe, idk.

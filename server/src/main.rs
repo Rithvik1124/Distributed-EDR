@@ -1,7 +1,8 @@
+mod cache;
 mod db;
-mod node_roles;
 mod detect;
 mod handlers;
+mod node_roles;
 mod telemetry;
 
 use crate::telemetry::TelemetryEvent;
@@ -38,6 +39,16 @@ async fn yara_event_in(
     Json(event): Json<String>,
 ) -> &'static str {
     println!("Received YARA event: {}", event);
+
+    // Process the string here.
+
+    "YARA event received"
+}
+
+async fn cache_event(
+    Json(event): Json<String>,
+) -> &'static str {
+    println!("Received event for caching: {}", event);
 
     // Process the string here.
 
@@ -103,6 +114,7 @@ async fn main() {
     let app = Router::new()
         .route("/publish", post(publish))
         .route("/yara-check", post(yara_event_in))
+        .route("/cache-event", post(cache_event))
         .route("/sigma-check", post(sigma_event_in))
         .route("/ioc-check", post(ioc_event_in))
         .route("/consensus-check", post(consensus_event_in))

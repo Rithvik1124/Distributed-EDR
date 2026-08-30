@@ -22,3 +22,7 @@ pub fn match_sigma_rule(event: &Event) -> SigmaEventResponse {
         rule_matched,
     }
 }
+
+pub fn forward_result(result: SigmaEventResponse){
+    
+}

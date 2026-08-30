@@ -5,10 +5,6 @@ use crate::node_roles::yara::YARA_RULES;
 use crate::telemetry::{YaraEventResponse, YaraStatus::{YaraHit, NoRuleMatched}};
 use yara_x::{Scanner, Rules};
 
-
-
-// !!! FIX THIS BOYYY
-
 pub fn match_yara_rule(file_dir: &str) -> YaraEventResponse{
     let mut file = fs::File::open(file_dir).unwrap();
 
