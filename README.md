@@ -1,3 +1,4 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Rithvik1124/Distributed-EDR)
 # Distributed EDR (Endpoint Detection & Response)
 
 ## Overview of what the project is meant to be:
@@ -142,3 +143,4 @@ The project is under active development and currently includes:
 ---
 
 Would love to hear any advice to how to improve the project!
+

@@ -1,5 +1,5 @@
 use crate::node_roles::sigma::SIGMA_RULES;
-use crate::telemetry::{SigmaEventResponse, SigmaStatus};
+use crate::telemetry::{SigmaEventResponse, SigmaStatus,ResponseType::Sigma};
 use sigma_rust::{Event, Rule};
 
 
@@ -18,6 +18,7 @@ pub fn match_sigma_rule(event: &Event) -> SigmaEventResponse {
     };
 
     SigmaEventResponse {
+        response_type:Sigma,
         status,
         rule_matched,
     }

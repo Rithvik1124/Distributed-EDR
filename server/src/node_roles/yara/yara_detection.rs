@@ -2,7 +2,7 @@ use std::fs;
 use serde::{Serialize, Deserialize};
 use std::io::Read;
 use crate::node_roles::yara::YARA_RULES;
-use crate::telemetry::{YaraEventResponse, YaraStatus::{YaraHit, NoRuleMatched}};
+use crate::telemetry::{YaraEventResponse, YaraStatus::{YaraHit, NoRuleMatched}, ResponseType::Yara};
 use yara_x::{Scanner, Rules};
 
 pub fn match_yara_rule(file_dir: &str) -> YaraEventResponse{
@@ -21,10 +21,10 @@ pub fn match_yara_rule(file_dir: &str) -> YaraEventResponse{
     }
 
     if rules_hit.len() >=1{
-        YaraEventResponse { status: YaraHit, rule_matched: rules_hit }
+        YaraEventResponse { response_type:Yara, status: YaraHit, rule_matched: rules_hit }
     }
     else {
-        YaraEventResponse { status: NoRuleMatched, rule_matched: rules_hit }
+        YaraEventResponse {  response_type:Yara, status: NoRuleMatched, rule_matched: rules_hit }
     }
 }
 

@@ -1,9 +1,19 @@
 use crate::handlers::*;
 use plain::Plain;
-use std::{hash::{ Hash, Hasher}, fs};
+use std::{default, fs, hash::{ Hash, Hasher}};
 use serde::{Deserialize, Serialize};
 use sigma_rust::Rule;
 
+
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+pub enum ResponseType{
+    Sigma,
+    IOC,
+    Yara,
+    #[default]
+    DefEvent,
+
+}
 
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub enum SigmaStatus {
@@ -13,6 +23,7 @@ pub enum SigmaStatus {
 }
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub struct SigmaEventResponse{
+    pub response_type: ResponseType,
     pub status: SigmaStatus,
     pub rule_matched: Vec<String>,
 }
@@ -25,10 +36,13 @@ pub enum YaraStatus {
 }
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub struct YaraEventResponse{
+    pub response_type: ResponseType,
     pub status: YaraStatus,
     pub rule_matched: Vec<String>,
 }
 
+
+//Needs change
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 
 pub struct IOCResults{
