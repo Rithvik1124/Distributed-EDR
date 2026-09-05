@@ -1,5 +1,7 @@
 use lru::LruCache;
 use crate::node_roles::{consensus::*, transport::client::ServerClient};
+use crate::telemetry::BlockedIPStatus::NoIPMatched;
+use crate::telemetry::FileHashStatus::NoHashMatched;
 use crate::telemetry::TelemetryEvent;
 #[derive(Debug, PartialEq)]
 enum Decision{
@@ -36,7 +38,7 @@ fn decide(
     let sig = hash_event(event);
 
     if !event.analysis_result.yara_results.rule_matched.is_empty()
-        || !event.analysis_result.ioc_results.is_empty()
+        || event.analysis_result.ioc_results.file_hash_result.file_hash_status==NoHashMatched|| event.analysis_result.ioc_results.blocked_ip_result.status==NoIPMatched
     {
         return Decision::Forward(event.clone());
     }

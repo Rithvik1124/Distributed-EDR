@@ -1,6 +1,6 @@
 use crate::handlers::*;
 use plain::Plain;
-use std::{default, fs, hash::{ Hash, Hasher}};
+use std::{default, fs, hash::{ Hash, Hasher}, net::IpAddr};
 use serde::{Deserialize, Serialize};
 use sigma_rust::Rule;
 
@@ -43,12 +43,41 @@ pub struct YaraEventResponse{
 
 
 //Needs change
+
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 
-pub struct IOCResults{
-    rule_id: String,
-    rule_name: String,
-    rule_triggers: String,
+pub enum FileHashStatus {
+    HashHit,
+    #[default]
+    NoHashMatched,
+}
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+
+pub enum BlockedIPStatus{
+    IPHit,
+    #[default]
+    NoIPMatched,
+}
+
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+
+pub struct FileHashResponse{
+    pub file_hash_status: FileHashStatus,
+    pub file_hash: String,
+
+}
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+pub struct BlockedIPResponse{
+    pub status: BlockedIPStatus,
+    pub mal_ip: Option<IpAddr>,
+}
+
+
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+
+pub struct IOCEventResponse{
+    pub file_hash_result: FileHashResponse,
+    pub blocked_ip_result: BlockedIPResponse,
 }
 
 
@@ -57,7 +86,7 @@ pub struct AnalysisResult{
     pub is_mal: bool,
     pub sigma_results: SigmaEventResponse,
     pub yara_results: YaraEventResponse,
-    pub ioc_results: Vec<IOCResults>,
+    pub ioc_results: IOCEventResponse,
 }
 
 

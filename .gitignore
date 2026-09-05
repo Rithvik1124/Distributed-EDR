@@ -6,3 +6,9 @@ log.md
 /testruns/*
 *.redb
 full_sha256.txt
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
