@@ -43,10 +43,6 @@ pub fn check_in_cache(){
 pub fn find_sigma_result(mut result: TelemetryEvent)-> TelemetryEvent{
     let sigma_input = telemetry_to_event(&result);
     let sigma_result = match_sigma_rule(&sigma_input);
-
-    //Add a cache checing logix
-
-    //send this result to server
     result.analysis_result.sigma_results = sigma_result;
     result
     

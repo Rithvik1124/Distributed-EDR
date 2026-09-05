@@ -1,12 +1,11 @@
 mod cache;
 mod db;
-mod detect;
 mod handlers;
 mod node_roles;
 mod telemetry;
 
-use crate::telemetry::TelemetryEvent;
-use crate::detect::edr_detect_rules;
+use crate::{node_roles::yara::yara_detection::match_yara_rule, telemetry::{TelemetryEvent, YaraRequest}};
+// use crate::detect::edr_detect_rules;
 
 use axum::{
     extract::State,
@@ -14,7 +13,7 @@ use axum::{
     Json,
     Router,
 };
-use serde::{Deserialize, Serialize};
+// use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 
@@ -34,7 +33,7 @@ async fn publish(
     "Event queued successfully"
 }
 
-
+//removable
 async fn yara_event_in(
     Json(event): Json<String>,
 ) -> &'static str {
@@ -43,6 +42,14 @@ async fn yara_event_in(
     // Process the string here.
 
     "YARA event received"
+}
+
+async fn yara_request_in(
+    Json(event): Json<YaraRequest>,
+) -> &'static str {
+    match_yara_rule(event);
+
+    "YARA request received"
 }
 
 async fn cache_event(
@@ -88,19 +95,16 @@ async fn consensus_event_in(
 #[tokio::main]
 async fn main() {
     let (tx, rx) = mpsc::channel::<TelemetryEvent>(100_000);
-
     let rx = Arc::new(Mutex::new(rx));
 
     for worker_id in 0..2 {
         let rx = rx.clone();
-
         tokio::spawn(async move {
             loop {
                 let event = {
                     let mut rx = rx.lock().await;
                     rx.recv().await
                 };
-
                 match event {
                     Some(event) => {
                         crate::db::events_in::write_event(event);
@@ -113,7 +117,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/publish", post(publish))
-        .route("/yara-check", post(yara_event_in))
+        .route("/yara-check", post(yara_event_in))//internal function - not for external nodes
+        .route("/yara-reqs", post(yara_request_in))//internal function - not for external nodes
         .route("/cache-event", post(cache_event))
         .route("/sigma-check", post(sigma_event_in))
         .route("/ioc-check", post(ioc_event_in))

@@ -2,7 +2,7 @@ use redb::{Database, TableDefinition,
             ReadableTable, ReadableDatabase};
 use std::{sync::LazyLock, hash::{DefaultHasher, Hash, Hasher}};
 use crate::telemetry::{AnalysisResult, BlockedIPStatus::NoIPMatched, FileHashStatus::NoHashMatched, SigmaStatus, TelemetryEvent, YaraStatus};
-use crate::detect::edr_detect_rules;
+// use crate::detect::edr_detect_rules;
 use reqwest::Client;
 use tokio::sync::mpsc;
 use crate::node_roles::{sigma::sigma_detection::match_sigma_rule, 

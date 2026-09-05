@@ -5,6 +5,18 @@ use serde::{Deserialize, Serialize};
 use sigma_rust::Rule;
 
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct YaraRequest {
+    pub event_id: u64,
+    pub file_dir: String,
+}
+
+#[derive(Serialize)]
+pub struct YaraConsensusPacket {
+    pub event_id: u64,
+    pub response: YaraEventResponse,
+}
+
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub enum ResponseType{
     Sigma,
