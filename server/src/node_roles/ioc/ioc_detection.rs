@@ -85,6 +85,7 @@ pub fn find_ioc_result(mut result: TelemetryEvent) -> TelemetryEvent {
     });
 
     let ip_result = blocked_ip_check(ip);
+    
 
     // 3. combine into IOC response
     result.analysis_result.ioc_results = IOCEventResponse {

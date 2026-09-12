@@ -1,6 +1,6 @@
 use crate::node_roles::sigma::SIGMA_RULES;
 use crate::telemetry::{TelemetryEvent, SigmaEventResponse, SigmaStatus,ResponseType::Sigma};
-use reqwest::blocking::Client;
+use reqwest::Client;
 use sigma_rust::{Event, Rule};
 use crate::node_roles::cache::*;
 use crate::handlers::hash_event;
@@ -61,26 +61,29 @@ pub fn check_in_cache(event: &TelemetryEvent) -> SigmaEventResponse {
 }
 
 // Gets telemetry from /sigma-check then runs a check after checking the cache, then 
-pub fn find_sigma_result(mut result: TelemetryEvent){
+pub async fn find_sigma_result(mut result: TelemetryEvent){
     let sigma_input = telemetry_to_event(&result);
-    //replace match_sigma_rule with check_in_cache
-    let sigma_result = check_in_cache(&result);
+    let sigma_result = match_sigma_rule(&sigma_input);
+    // let sigma_result = check_in_cache(&result);
     result.analysis_result.sigma_results = sigma_result;
-    result.sigma_check = true;
-    send_sigma_result(result);
-
-    //then send it to the consensus server.
+    // result.sigma_check = true;
+    send_sigma_result(result).await;
     
 }
 
 
 
-pub fn send_sigma_result(event: TelemetryEvent) {
-    let client = Client::new();
+pub async fn send_sigma_result(event: TelemetryEvent) {
+    let client = reqwest::Client::new();
 
-    let _ = client
+    match client
         .post("http://127.0.0.1:3000/consensus-check")
         .json(&event)
-        .send();
+        .send()
+        .await
+    {
+        Ok(res) => println!("sent: {:?}", res.status()),
+        Err(e) => eprintln!("failed: {:?}", e),
+    }
 }
 

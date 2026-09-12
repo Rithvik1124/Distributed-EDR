@@ -1,9 +1,14 @@
-mod db;
+// mod db;
 mod handlers;
 mod node_roles;
 mod telemetry;
-
-use crate::{node_roles::{ioc::ioc_detection::{FileHashRequest, HashResponse}, yara::yara_detection::{handle_yara_request, match_yara_rule}}, telemetry::{TelemetryEvent, YaraRequest}};
+use axum::middleware::Next;
+use axum::response::Response;
+use axum::extract::Request;
+use crate::{node_roles::{ioc::ioc_detection::{FileHashRequest, HashResponse}, 
+            sigma::sigma_detection::find_sigma_result, 
+            yara::yara_detection::{handle_yara_request, match_yara_rule}}, 
+            telemetry::{TelemetryEvent, YaraRequest}};
 // use crate::detect::edr_detect_rules;
 
 use axum::{
@@ -33,7 +38,7 @@ async fn publish(
     "Event queued successfully"
 }
 
-//removable
+// removable
 async fn yara_event_in(
     Json(event): Json<String>,
 ) -> &'static str {
@@ -72,43 +77,49 @@ async fn ioc_event_in(
     "IOC event received"
 }
 
-//respond to the request sent by ioc server
+// respond to the request sent by ioc server
 async fn send_file_hash(
     Json(req): Json<FileHashRequest>,
 ) -> Json<HashResponse> {
     let input = Path::new(&req.file_path);
-
     let hash = try_digest(input).unwrap();
 
     Json(HashResponse { hash })
 }
 
 async fn sigma_event_in(
-    Json(event): Json<String>,
+    payload: Result<Json<TelemetryEvent>, axum::extract::rejection::JsonRejection>,
 ) -> &'static str {
-    println!("Received Sigma event: {}", event);
+    match payload {
+        Ok(Json(event)) => {
+            println!("RECEIVED: {:?}", &event);
+            find_sigma_result(event).await;
+            "ok"
+        }
+        Err(e) => {
+            println!("JSON ERROR: {:?}", e);
+            "bad request"
+        }
+    }
+}
 
-    // Process the string here.
-
-    "Sigma event received"
+async fn log_requests(req: Request, next: Next) -> Response {
+    println!("--> {:?}", req.uri());
+    next.run(req).await
 }
 
 async fn consensus_event_in(
-    Json(event): Json<String>,
+    Json(event): Json<TelemetryEvent>,
 ) -> &'static str {
-    println!("Received Consensus event: {}", event);
-
-    // Process the string here.
-
-    "Consensus event received"
+    println!("CONSENSUS HIT: {:#?}", event);
+    "ok"
 }
-
 #[tokio::main]
 async fn main() {
     let (tx, rx) = mpsc::channel::<TelemetryEvent>(100_000);
     let rx = Arc::new(Mutex::new(rx));
 
-    for worker_id in 0..2 {
+    for _ in 0..2 {
         let rx = rx.clone();
         tokio::spawn(async move {
             loop {
@@ -116,9 +127,10 @@ async fn main() {
                     let mut rx = rx.lock().await;
                     rx.recv().await
                 };
+
                 match event {
                     Some(event) => {
-                        crate::db::events_in::write_event(event);
+                        println!("{:?}", event);
                     }
                     None => break,
                 }
@@ -126,16 +138,18 @@ async fn main() {
         });
     }
 
-    let app = Router::new()
-        .route("/publish", post(publish))
-        .route("/yara-check", post(yara_event_in))//internal function - not for external nodes
-        .route("/yara-reqs", post(yara_request_in))//internal function - not for external nodes
-        .route("/cache-event", post(cache_event))
-        .route("/sigma-check", post(sigma_event_in))
-        .route("/ioc-check", post(ioc_event_in))
-        .route("/file-hash", post(send_file_hash))
+    let internal_routes = Router::new()
         .route("/consensus-check", post(consensus_event_in))
+        .route("/sigma-check", post(sigma_event_in))
+        .route("/publish", post(publish))
+        .route("/yara-reqs", post(yara_request_in))
+        .route("/cache-event", post(cache_event))
+        .route("/ioc-check", post(ioc_event_in))
+        .route("/file-hash", post(send_file_hash));
 
+    let app = Router::new()
+        .merge(internal_routes)
+        .layer(axum::middleware::from_fn(log_requests))
         .with_state(AppState { sender: tx });
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
@@ -144,5 +158,7 @@ async fn main() {
 
     println!("Listening on http://localhost:3000");
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .await
+        .unwrap();
 }

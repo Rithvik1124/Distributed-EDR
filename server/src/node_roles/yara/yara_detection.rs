@@ -60,7 +60,7 @@ pub fn handle_yara_request(req: YaraRequest) {
         match_yara_rule(&event.filename);
 
     event.analysis_result.yara_results = yara_result;
-    event.yara_check = true;
+    // event.yara_check = true;
     send_yara(event);
 }
 

@@ -1,6 +1,6 @@
 // node_roles/transport/client.rs
 
-use reqwest::blocking::Client;
+use reqwest::Client;
 use serde::Serialize;
 use crate::node_roles::get_server_ip;
 

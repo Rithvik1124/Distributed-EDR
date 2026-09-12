@@ -1,9 +1,31 @@
 use crate::handlers::*;
 use plain::Plain;
-use std::{hash::{ Hash, Hasher}, fs};
+use std::{default, fs, hash::{ Hash, Hasher}, net::IpAddr};
 use serde::{Deserialize, Serialize};
 use sigma_rust::Rule;
 
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct YaraRequest {
+    pub event_id: u64,
+    pub event: TelemetryEvent,
+}
+
+#[derive(Serialize)]
+pub struct YaraConsensusPacket {
+    pub event_id: u64,
+    pub response: YaraEventResponse,
+}
+
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+pub enum ResponseType{
+    Sigma,
+    IOC,
+    Yara,
+    #[default]
+    DefEvent,
+
+}
 
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub enum SigmaStatus {
@@ -13,6 +35,7 @@ pub enum SigmaStatus {
 }
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub struct SigmaEventResponse{
+    pub response_type: ResponseType,
     pub status: SigmaStatus,
     pub rule_matched: Vec<String>,
 }
@@ -25,16 +48,49 @@ pub enum YaraStatus {
 }
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub struct YaraEventResponse{
+    pub response_type: ResponseType,
     pub status: YaraStatus,
     pub rule_matched: Vec<String>,
 }
 
+
+//Needs change
+
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 
-pub struct IOCResults{
-    rule_id: String,
-    rule_name: String,
-    rule_triggers: String,
+pub enum FileHashStatus {
+    HashHit,
+    #[default]
+    NoHashMatched,
+}
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+
+pub enum BlockedIPStatus{
+    IPHit,
+    #[default]
+    NoIPMatched,
+}
+
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+
+pub struct FileHashResponse{
+    pub file_hash_status: FileHashStatus,
+    pub file_hash: String,
+
+}
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+pub struct BlockedIPResponse{
+    pub status: BlockedIPStatus,
+    pub mal_ip: Option<IpAddr>,
+}
+
+
+#[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
+
+pub struct IOCEventResponse{
+    
+    pub file_hash_result: FileHashResponse,
+    pub blocked_ip_result: BlockedIPResponse,
 }
 
 
@@ -43,7 +99,7 @@ pub struct AnalysisResult{
     pub is_mal: bool,
     pub sigma_results: SigmaEventResponse,
     pub yara_results: YaraEventResponse,
-    pub ioc_results: Vec<IOCResults>,
+    pub ioc_results: IOCEventResponse,
 }
 
 

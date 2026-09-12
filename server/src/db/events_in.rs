@@ -111,6 +111,18 @@ fn merge_analysis(old: &mut AnalysisResult,new: &AnalysisResult,) {
     }
 }
 
+fn sync_flags(event: &mut TelemetryEvent) {
+    event.sigma_check =
+        matches!(event.analysis_result.sigma_results.status, SigmaStatus::SigmaHit);
+
+    event.yara_check =
+        matches!(event.analysis_result.yara_results.status, YaraStatus::YaraHit);
+
+    event.ioc_check =
+        !(event.analysis_result.ioc_results.file_hash_result.file_hash_status == NoHashMatched
+        && event.analysis_result.ioc_results.blocked_ip_result.status == NoIPMatched);
+}
+
     //check if event_id exists
     //if yes -> check event_type; append the values
     //else -> append the new event
@@ -135,7 +147,7 @@ pub fn write_event(event: TelemetryEvent) -> Result<(), Box<dyn std::error::Erro
             };
 
         // 2. Merge or insert
-        let final_event = if let Some(mut existing) = existing_event {
+        let mut final_event = if let Some(mut existing) = existing_event {
             // MERGE analysis results
             merge_analysis(
                 &mut existing.analysis_result,
@@ -146,6 +158,8 @@ pub fn write_event(event: TelemetryEvent) -> Result<(), Box<dyn std::error::Erro
         } else {
             event
         };
+
+        sync_flags(&mut final_event);
 
         // 3. Encode final event
         let encoded = bincode::serde::encode_to_vec(

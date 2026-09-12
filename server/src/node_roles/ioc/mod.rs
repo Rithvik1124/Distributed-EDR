@@ -6,30 +6,35 @@ use reqwest::blocking::get;
 
 /// Global IOC map:
 /// IPSum -> threat level (1–8)
-pub static BLOCKLIST_IP_IOC_MAP: LazyLock<HashMap<IpAddr, u8>> = LazyLock::new(|| {
-    load_ipsum_ioc()
-});
+pub static BLOCKLIST_IP_IOC_MAP: LazyLock<HashMap<IpAddr, u8>> =
+    LazyLock::new(|| load_ipsum_ioc());
 
 pub static FILE_HASHES_MAP: LazyLock<HashMap<String, u8>> = LazyLock::new(|| {
     load_file_hashes("file_hashes/full_sha256.txt")
 });
 
 fn load_file_hashes(dir: &str) -> HashMap<String, u8> {
-    let mut file_hashes = HashMap::new();
+    let mut map = HashMap::new();
 
-    let file = File::open(dir).unwrap();
+    let file = match File::open(dir) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("failed to open file hashes: {:?}", e);
+            return map;
+        }
+    };
+
     let reader = BufReader::new(file);
 
-    println!("Reading file line-by-line:\n");
-
-    for line_result in reader.lines() {
-        let line = line_result.unwrap();
-        let line = line.trim().to_owned(); // FIX: must own String
-
-        file_hashes.insert(line, 1);
+    for line in reader.lines().flatten() {
+        let line = line.trim();
+        if !line.is_empty() {
+            map.insert(line.to_string(), 1);
+        }
     }
 
-    file_hashes
+    println!("shit worked");
+    map
 }
 
 

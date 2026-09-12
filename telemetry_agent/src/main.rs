@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
     tokio::spawn(async move {
         while let Some(some_event) = rx.recv().await {
             if let Err(e) = http_client
-                .post("http://127.0.0.1:3000/publish")
+                .post("http://127.0.0.1:3000/sigma-check")
                 .json(&some_event)
                 .send()
                 .await
