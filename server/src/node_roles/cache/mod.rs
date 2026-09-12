@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::{Arc, LazyLock, Mutex, Weak};
 
-use crate::telemetry::TelemetryEvent;
+use crate::telemetry::{IOCEventResponse, SigmaEventResponse, TelemetryEvent, YaraEventResponse};
 
 struct Node<K, V> {
     key: K,
@@ -190,25 +190,72 @@ where
 
 const CAPACITY: usize = 100;
 
-pub static EVENTS_CACHE: LazyLock<Mutex<LRUCache<u64, TelemetryEvent>>> =
+
+pub static SIGMA_CACHE: LazyLock<Mutex<LRUCache<u64, SigmaEventResponse>>> =
+    LazyLock::new(|| Mutex::new(LRUCache::new(CAPACITY)));
+
+pub static IOC_CACHE: LazyLock<Mutex<LRUCache<u64, IOCEventResponse>>> =
+    LazyLock::new(|| Mutex::new(LRUCache::new(CAPACITY)));
+
+pub static YARA_CACHE: LazyLock<Mutex<LRUCache<u64, YaraEventResponse>>> =
+    LazyLock::new(|| Mutex::new(LRUCache::new(CAPACITY)));
+
+pub static CONSENSUS_CACHE: LazyLock<Mutex<LRUCache<u64, TelemetryEvent>>> =
     LazyLock::new(|| Mutex::new(LRUCache::new(CAPACITY)));
 
 
-
-pub fn cache_event(key: u64, event: TelemetryEvent) {
-    EVENTS_CACHE
+pub fn cache_sigma_event(key: u64, event: &SigmaEventResponse) {
+    SIGMA_CACHE
         .lock()
         .unwrap()
-        .set(key, event);
+        .set(key, event.clone());
 }
 
-pub fn get_cached_event(key: u64) -> Option<TelemetryEvent> {
-    EVENTS_CACHE
+pub fn get_sigma_cached_event(key: u64) -> Option<SigmaEventResponse> {
+    SIGMA_CACHE
         .lock()
         .unwrap()
         .get(&key)
 }
+pub fn cache_ioc_event(key: u64, event: &IOCEventResponse) {
+    IOC_CACHE
+        .lock()
+        .unwrap()
+        .set(key, event.clone());
+}
 
+pub fn get_ioc_cached_event(key: u64) -> Option<IOCEventResponse> {
+    IOC_CACHE
+        .lock()
+        .unwrap()
+        .get(&key)
+}
+pub fn cache_yara_event(key: u64, event: &YaraEventResponse) {
+    YARA_CACHE
+        .lock()
+        .unwrap()
+        .set(key, event.clone());
+}
+
+pub fn get_yara_cached_event(key: u64) -> Option<YaraEventResponse> {
+    YARA_CACHE
+        .lock()
+        .unwrap()
+        .get(&key)
+}
+pub fn cache_consensus_event(key: u64, event: &TelemetryEvent) {
+    CONSENSUS_CACHE
+        .lock()
+        .unwrap()
+        .set(key, event.clone());
+}
+
+pub fn get_consensus_cached_event(key: u64) -> Option<TelemetryEvent> {
+    CONSENSUS_CACHE
+        .lock()
+        .unwrap()
+        .get(&key)
+}
 // fn main() {
 //     let mut cache = LRUCache::new(2);
 //     cache.set("key1", "value1");

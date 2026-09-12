@@ -1,17 +1,17 @@
 pub mod ioc;
+pub mod cache;
 pub mod sigma;
 pub mod yara;
 pub mod consensus;
 pub mod transport;
-use std::{ fs, net::Ipv4Addr, str::FromStr, sync::{Arc, LazyLock, RwLock}, };
+use std::{ fs, net::Ipv4Addr, str::FromStr, sync::{Arc, LazyLock, RwLock, Mutex}, };
 use axum::routing::get;
 use serde::Deserialize;
-
 use lru::LruCache;
 //CACHING
 
-pub static CACHE: LazyLock<Arc<RwLock<LruCache<String, String>>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(LruCache::unbounded())));
+// pub static EVENTS_CACHE: LazyLock<Mutex<LRUCache<u64, TelemetryEvent>>> =
+//     LazyLock::new(|| Mutex::new(LRUCache::new(CAPACITY)));
 pub static CONSENSUS_NODE_IP: LazyLock<Ipv4Addr>= LazyLock::new(|| get_consensus_ip());
 pub static SERVER_IP: LazyLock<Ipv4Addr>= LazyLock::new(|| get_server_ip());
 

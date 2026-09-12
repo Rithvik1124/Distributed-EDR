@@ -13,27 +13,20 @@ use crate::telemetry::{
 
 };
 
-
-pub fn match_yara_rule(req: YaraRequest) {
-    // Read file bytes
-    let event_id = req.event_id;
-    
-    let mut file = fs::File::open(&req.file_dir).unwrap();
+pub fn match_yara_rule(file_dir: &str) -> YaraEventResponse {
+    let mut file = fs::File::open(file_dir).unwrap();
     let mut data = Vec::new();
     file.read_to_end(&mut data).unwrap();
 
-    // Build scanner
     let mut scanner = Scanner::new(&YARA_RULES);
-
     let results = scanner.scan(&data).unwrap();
 
-    let mut rules_hit: Vec<String> = Vec::new();
+    let rules_hit: Vec<String> = results
+        .matching_rules()
+        .map(|r| r.identifier().to_string())
+        .collect();
 
-    for rule in results.matching_rules() {
-        rules_hit.push(rule.identifier().to_string());
-    }
-
-    let response = if !rules_hit.is_empty() {
+    if !rules_hit.is_empty() {
         YaraEventResponse {
             response_type: Yara,
             status: YaraHit,
@@ -45,31 +38,42 @@ pub fn match_yara_rule(req: YaraRequest) {
             status: NoRuleMatched,
             rule_matched: rules_hit,
         }
-    };
+    }
+}
 
-    // SEND TO CONSENSUS SERVER
 
-    let packet = YaraConsensusPacket {
-        event_id,
-        response,
-    };
-
+//send result to consensus
+pub fn send_yara(event: TelemetryEvent) {
     let client = Client::new();
 
     let _ = client
-        .post("https://127.0.0.1:3000/consensus-check")
-        .json(&packet)
+        .post("http://127.0.0.1:3000/consensus-check")
+        .json(&event)
         .send();
 }
 
+
+//handle yara request
+pub fn handle_yara_request(req: YaraRequest) {
+    let mut event: TelemetryEvent = req.event;
+    let yara_result: YaraEventResponse =
+        match_yara_rule(&event.filename);
+
+    event.analysis_result.yara_results = yara_result;
+    event.yara_check = true;
+    send_yara(event);
+}
+
 //Sends yara req to the ip(localhost rn) the ip sends the result back to https://<ip>/consensus-check(in src/node_roles/transport/), along with
-//Needs xception handling - even though almost every everything needs xception handling(major bloat)
-pub fn send_yara_search_req(event_id: u64, file_dir: String) {
+//Needs xception handling - even though almost every everything needs xception handling :(
+
+//send yara file check request
+pub fn send_yara_search_req(event_id: u64, event: TelemetryEvent) {
     let client = Client::new();
 
     let req = YaraRequest {
         event_id,
-        file_dir,
+        event,
     };
 
     let _ = client

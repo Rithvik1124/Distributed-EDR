@@ -8,7 +8,7 @@ use sigma_rust::Rule;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct YaraRequest {
     pub event_id: u64,
-    pub file_dir: String,
+    pub event: TelemetryEvent,
 }
 
 #[derive(Serialize)]
@@ -88,6 +88,7 @@ pub struct BlockedIPResponse{
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 
 pub struct IOCEventResponse{
+    
     pub file_hash_result: FileHashResponse,
     pub blocked_ip_result: BlockedIPResponse,
 }

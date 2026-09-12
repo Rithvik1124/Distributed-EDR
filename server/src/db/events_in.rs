@@ -90,10 +90,9 @@ pub fn find_all_checks_true(
     Ok(results)
 }
 
-fn merge_analysis(
-    old: &mut AnalysisResult,
-    new: &AnalysisResult,
-) {
+//there's probably a better way to do this
+
+fn merge_analysis(old: &mut AnalysisResult,new: &AnalysisResult,) {
     if new.is_mal {
         old.is_mal = true;
     }

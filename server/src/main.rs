@@ -1,10 +1,9 @@
-mod cache;
 mod db;
 mod handlers;
 mod node_roles;
 mod telemetry;
 
-use crate::{node_roles::yara::yara_detection::match_yara_rule, telemetry::{TelemetryEvent, YaraRequest}};
+use crate::{node_roles::{ioc::ioc_detection::{FileHashRequest, HashResponse}, yara::yara_detection::{handle_yara_request, match_yara_rule}}, telemetry::{TelemetryEvent, YaraRequest}};
 // use crate::detect::edr_detect_rules;
 
 use axum::{
@@ -13,8 +12,9 @@ use axum::{
     Json,
     Router,
 };
+use sha256::try_digest;
 // use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 use tokio::sync::{mpsc, Mutex};
 
 #[derive(Clone)]
@@ -47,7 +47,7 @@ async fn yara_event_in(
 async fn yara_request_in(
     Json(event): Json<YaraRequest>,
 ) -> &'static str {
-    match_yara_rule(event);
+    handle_yara_request(event);
 
     "YARA request received"
 }
@@ -70,6 +70,17 @@ async fn ioc_event_in(
     // Process the string here.
 
     "IOC event received"
+}
+
+//respond to the request sent by ioc server
+async fn send_file_hash(
+    Json(req): Json<FileHashRequest>,
+) -> Json<HashResponse> {
+    let input = Path::new(&req.file_path);
+
+    let hash = try_digest(input).unwrap();
+
+    Json(HashResponse { hash })
 }
 
 async fn sigma_event_in(
@@ -122,6 +133,7 @@ async fn main() {
         .route("/cache-event", post(cache_event))
         .route("/sigma-check", post(sigma_event_in))
         .route("/ioc-check", post(ioc_event_in))
+        .route("/file-hash", post(send_file_hash))
         .route("/consensus-check", post(consensus_event_in))
 
         .with_state(AppState { sender: tx });
