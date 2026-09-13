@@ -42,9 +42,11 @@ pub fn match_sigma_rule(event: &Event) -> SigmaEventResponse {
 // MAKE ANOTHER FUNCTION WHICH CHECKS CACHE AND DETERMINES WHETHER THE EVENT IS REDUNDANT OR NOT TO REMOVE UNNECESSARY CHECKS< YOU MIGHT HAVE TO REMOVE TIMESTAMP FROM THE HASHING THING
 pub fn check_in_cache(event: &TelemetryEvent) -> SigmaEventResponse {
     let key = hash_event(event);
+    print!("Cache func used\n");
 
     // 1. cache hit → return cached analysis
     if let Some(cached) = get_sigma_cached_event(key) {
+        print!("Cache hit\n");
         return cached;
     }
 
@@ -54,6 +56,7 @@ pub fn check_in_cache(event: &TelemetryEvent) -> SigmaEventResponse {
 
     // 3. cache ONLY if no match
     if matches!(result.status, crate::telemetry::SigmaStatus::NoRuleMatched) {
+        print!("Cache stored: {} \n", &key);
         cache_sigma_event(key, &result);
     }
 
@@ -62,9 +65,9 @@ pub fn check_in_cache(event: &TelemetryEvent) -> SigmaEventResponse {
 
 // Gets telemetry from /sigma-check then runs a check after checking the cache, then 
 pub async fn find_sigma_result(mut result: TelemetryEvent){
-    let sigma_input = telemetry_to_event(&result);
-    let sigma_result = match_sigma_rule(&sigma_input);
+    let sigma_result = check_in_cache(&result);
     // let sigma_result = check_in_cache(&result);
+    println!("Sigma result: {:?}:\n", &sigma_result);
     result.analysis_result.sigma_results = sigma_result;
     // result.sigma_check = true;
     send_sigma_result(result).await;

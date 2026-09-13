@@ -1,25 +1,28 @@
-title: Triple Cross eBPF Rootkit Install Commands
-id: 22236d75-d5a0-4287-bf06-c93b1770860f
+title: Suspicious Process Names
+id: Trial-Rule-Not-Important
 status: test
-description: Detects default install commands of the Triple Cross eBPF rootkit based on the "deployer.sh" script
-references:
-    - https://github.com/h3xduck/TripleCross/blob/1f1c3e0958af8ad9f6ebe10ab442e75de33e91de/apps/deployer.sh
+description: Detects suspicious process names based on their comm value
 author: Nasreddine Bencherchali (Nextron Systems)
 date: 2022-07-05
+
 tags:
-    - attack.stealth
-    - attack.t1014
+  - attack.stealth
+  - attack.t1014
+
 logsource:
-    category: process_creation
-    product: linux
+  category: process_creation
+  product: linux
+
 detection:
-    selection:
-        #Image|endswith: '/sudo'
-        CommandLine|contains|all:
-            - './target/debug/edr-agent'
-        CommandLine|contains:
-            - './target/debug/edr-agent'
-    condition: selection
+  selection:
+    - comm: 'noctalia'
+    - comm|contains:
+        - 'server'
+        - '/usr'
+
+  condition: selection
+
 falsepositives:
-    - Unlikely
+  - Legitimate processes with matching names
+
 level: high

@@ -31,10 +31,8 @@ pub fn nanosec_to_timestamp(monotonic_ns: u64, offset_ns: i128) -> String {
 
 pub fn hash_event(event: &TelemetryEvent) -> u64 {
     let mut hasher = DefaultHasher::new();
-
     event.event_type.hash(&mut hasher);
-    event.pid.hash(&mut hasher);
+    event.comm.hash(&mut hasher);
     event.filename.hash(&mut hasher);
-
     hasher.finish()
 }
