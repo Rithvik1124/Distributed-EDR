@@ -5,10 +5,7 @@ mod telemetry;
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::extract::Request;
-use crate::{node_roles::{ioc::ioc_detection::{FileHashRequest, HashResponse}, 
-            sigma::sigma_detection::find_sigma_result, 
-            yara::yara_detection::{handle_yara_request, match_yara_rule}}, 
-            telemetry::{TelemetryEvent, YaraRequest}};
+use crate::{node_roles::{ioc::ioc_detection::{FileHashRequest, HashResponse, find_ioc_result, return_file_hash, send_ioc_result}, sigma::sigma_detection::find_sigma_result, yara::yara_detection::{handle_yara_request, match_yara_rule}}, telemetry::{TelemetryEvent, YaraRequest}};
 // use crate::detect::edr_detect_rules;
 
 use axum::{
@@ -68,22 +65,27 @@ async fn cache_event(
 }
 
 async fn ioc_event_in(
-    Json(event): Json<String>,
+    payload: Result<Json<TelemetryEvent>, axum::extract::rejection::JsonRejection>,
 ) -> &'static str {
-    println!("Received IOC event: {}", event);
-
-    // Process the string here.
-
-    "IOC event received"
+    match payload {
+        Ok(Json(event)) => {
+            println!("RECEIVED IOC: {:?}", &event);
+            send_ioc_result(event).await;
+            "ok"
+        }
+        Err(e) => {
+            println!("JSON ERROR: {:?}", e);
+            "bad request"
+        }
+    }
 }
 
 // respond to the request sent by ioc server
 async fn send_file_hash(
     Json(req): Json<FileHashRequest>,
 ) -> Json<HashResponse> {
-    let input = Path::new(&req.file_path);
-    let hash = try_digest(input).unwrap();
-
+    //needs to be replaced - no exception handling
+    let hash = return_file_hash(&req.file_path);
     Json(HashResponse { hash })
 }
 
@@ -134,6 +136,7 @@ async fn main() {
                     }
                     None => break,
                 }
+                
             }
         });
     }

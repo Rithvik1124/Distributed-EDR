@@ -1,3 +1,4 @@
+//add an xdp/tc part for ioc ip blacklist
 mod telemetry;
 mod handlers;
 use core::time::Duration;
@@ -89,18 +90,33 @@ async fn main() -> Result<()> {
     let (tx, mut rx) = mpsc::channel::<TelemetryEvent>(1024); // 1024 is the channel capacity, both want EVent here
 
     let http_client = client.clone();
+    let mut i = 0;
     tokio::spawn(async move {
-        while let Some(some_event) = rx.recv().await {
-            if let Err(e) = http_client
-                .post("http://127.0.0.1:3000/sigma-check")
-                .json(&some_event)
-                .send()
-                .await
-            {
-                eprintln!("Failed to send telemetry: {}", e);
-            }
+    while let Some(some_event) = rx.recv().await {
+        i+=1;
+
+        // sigma
+        if let Err(e) = http_client
+            .post("http://127.0.0.1:3000/sigma-check")
+            .json(&some_event)
+            .send()
+            .await
+        {
+            eprintln!("sigma send failed: {}", e);
         }
-    });
+
+        // ioc
+        if let Err(e) = http_client
+            .post("http://127.0.0.1:3000/ioc-check")
+            .json(&some_event)
+            .send()
+            .await
+        {
+            eprintln!("ioc send failed: {}", e);
+        }
+        println!("\n I={}",i);
+    }
+});
 
     let mut skel_builder = TrialSkelBuilder::default();
 

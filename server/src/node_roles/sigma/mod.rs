@@ -17,6 +17,7 @@ fn load_sigma_rules(dir: &str) -> Vec<sigma_rust::Rule> {
         let entry = entry.unwrap();
         let path = entry.path();
 
+        
         if matches!(
             path.extension().and_then(|s| s.to_str()),
             Some("yaml") | Some("yml")
