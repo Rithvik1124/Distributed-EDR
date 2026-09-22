@@ -2,7 +2,7 @@
     "Sigma":true,
     "Consensus":true,
     "IOC": true,
-    "Server": "SOME_IP", 
+    "Server": "127.0.0.1", 
     "Consensus_Server":"SOME_IP",
     "Sigma_Server": "SOME_IP",
     "IOC_Server":"SOME_IP"

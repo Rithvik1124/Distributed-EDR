@@ -5,7 +5,7 @@ mod telemetry;
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::extract::Request;
-use crate::{node_roles::{ioc::ioc_detection::{FileHashRequest, HashResponse, find_ioc_result, return_file_hash, send_ioc_result}, sigma::sigma_detection::find_sigma_result, yara::yara_detection::{handle_yara_request, match_yara_rule}}, telemetry::{TelemetryEvent, YaraRequest}};
+use crate::{node_roles::{consensus::detection::decide, ioc::{ioc_detection::{FileHashRequest, HashResponse, find_ioc_result, return_file_hash, send_ioc_result}, load_ioc_maps}, sigma::sigma_detection::find_sigma_result, yara::yara_detection::{handle_yara_request, match_yara_rule}}, telemetry::{TelemetryEvent, YaraRequest}};
 // use crate::detect::edr_detect_rules;
 
 use axum::{
@@ -33,17 +33,6 @@ async fn publish(
     }
 
     "Event queued successfully"
-}
-
-// removable
-async fn yara_event_in(
-    Json(event): Json<String>,
-) -> &'static str {
-    println!("Received YARA event: {}", event);
-
-    // Process the string here.
-
-    "YARA event received"
 }
 
 async fn yara_request_in(
@@ -113,11 +102,25 @@ async fn log_requests(req: Request, next: Next) -> Response {
 async fn consensus_event_in(
     Json(event): Json<TelemetryEvent>,
 ) -> &'static str {
-    println!("CONSENSUS HIT: {:#?}", event);
+    println!("\n\nConsensus Event Decision:\n\n");
+    let decision = decide(&event);
+
+    let server = crate::node_roles::transport::client::ServerClient::new();
+
+    decision.execute(&server);
     "ok"
 }
+
+async fn server_func(
+    Json(event): Json<TelemetryEvent>,
+) -> &'static str {
+    println!("Got Telemetry to Server: {:#?}", event);
+    "ok"
+}
+
 #[tokio::main]
 async fn main() {
+    load_ioc_maps();
     let (tx, rx) = mpsc::channel::<TelemetryEvent>(100_000);
     let rx = Arc::new(Mutex::new(rx));
 
@@ -148,6 +151,7 @@ async fn main() {
         .route("/yara-reqs", post(yara_request_in))
         .route("/cache-event", post(cache_event))
         .route("/ioc-check", post(ioc_event_in))
+        .route("/telemetry-results", post(server_func))        
         .route("/file-hash", post(send_file_hash));
 
     let app = Router::new()

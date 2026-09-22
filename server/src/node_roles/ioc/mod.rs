@@ -38,6 +38,11 @@ LazyLock::new(|| {
     res
 });
 
+pub fn load_ioc_maps(){
+    println!("FILE HASHES LOAD: {:?}", FILE_HASHES_MAP.len());
+    println!("BLOCKLIST LOAD: {:?}", BLOCKLIST_IP_IOC_MAP.len());
+}
+
 fn load_file_hashes(dir: &str) -> HashMap<String, u8> {
     let mut map = HashMap::new();
 

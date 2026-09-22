@@ -10,8 +10,7 @@ pub struct ServerClient {
 }
 
 impl ServerClient {
-
-    pub fn new(endpoint: &str) -> Self {
+    pub fn new() -> Self {
         let server_ip = get_server_ip();
         let endpoint = &format!("http://{}/telemetry-results", server_ip ) as &str;
 

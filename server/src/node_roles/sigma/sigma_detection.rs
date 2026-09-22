@@ -33,7 +33,6 @@ pub fn match_sigma_rule(event: &Event) -> SigmaEventResponse {
     };
 
     SigmaEventResponse {
-        response_type:Sigma,
         status,
         rule_matched,
     }

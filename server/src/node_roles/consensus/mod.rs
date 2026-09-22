@@ -4,7 +4,7 @@ use chrono::{Local, Utc, NaiveDate};
 use std::hash::{Hasher,DefaultHasher, Hash};
 use crate::{node_roles::cache::{CONSENSUS_CACHE, cache_consensus_event}, telemetry::TelemetryEvent};
 
-fn log_event(event: &TelemetryEvent)->std::io::Result<()>{
+pub fn log_event(event: &TelemetryEvent)->std::io::Result<()>{
     let dt1: NaiveDate = Local::now().date_naive();
     let timestamp_utc = Utc::now();
     let timestamp: i64 = timestamp_utc.timestamp();
@@ -23,7 +23,7 @@ fn log_event(event: &TelemetryEvent)->std::io::Result<()>{
     
 }
 
-fn drop_redundant_event(event: TelemetryEvent){
+pub fn drop_redundant_event(event: TelemetryEvent){
     cache_consensus_event(hash_event(&event),&event);
 }
 
@@ -33,6 +33,5 @@ fn hash_event(event: &TelemetryEvent) -> u64 {
     event.event_type.hash(&mut hasher);
     event.pid.hash(&mut hasher);
     event.filename.hash(&mut hasher);
-
     hasher.finish()
 }

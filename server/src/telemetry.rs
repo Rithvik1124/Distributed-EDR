@@ -31,11 +31,11 @@ pub enum ResponseType{
 pub enum SigmaStatus {
     SigmaHit,
     #[default]
+    NoCheckDone,
     NoRuleMatched,
 }
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 pub struct SigmaEventResponse{
-    pub response_type: ResponseType,
     pub status: SigmaStatus,
     pub rule_matched: Vec<String>,
 }
@@ -44,6 +44,7 @@ pub struct SigmaEventResponse{
 pub enum YaraStatus {
     YaraHit,
     #[default]
+    NoCheckDone,
     NoRuleMatched,
 }
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
@@ -61,6 +62,7 @@ pub struct YaraEventResponse{
 pub enum FileHashStatus {
     HashHit,
     #[default]
+    NoCheckDone,
     NoHashMatched,
 }
 #[derive(Default, Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
@@ -68,6 +70,7 @@ pub enum FileHashStatus {
 pub enum BlockedIPStatus{
     IPHit,
     #[default]
+    NoCheckDone,
     NoIPMatched,
 }
 
