@@ -1,0 +1,73 @@
+// Not in use as telemetry throughput exceeds wal writes
+// Kept in here for future reference in /server
+use std::path::Path;
+use redb::{Database, ReadableDatabase, ReadableTable, ReadableTableMetadata, TableDefinition};
+use crate::telemetry::TelemetryEvent;
+
+// Table: u64 sequence -> JSON string
+const WAL: TableDefinition<u64, &str> = TableDefinition::new("wal");
+
+pub struct EventWal {
+    db: Database,
+}
+
+impl EventWal {
+    pub fn open(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        let db = Database::create(path)?;
+        // Ensure the table exists
+        let tx = db.begin_write()?;
+        tx.open_table(WAL)?;
+        tx.commit()?;
+        Ok(Self { db })
+    }
+
+    /// Persist an event and return its sequence number (the key you use to delete it later).
+    pub fn append(&self, event: &TelemetryEvent) -> anyhow::Result<u64> {
+        let json = serde_json::to_string(event)?;
+        let tx = self.db.begin_write()?;
+        let seq = {
+            let mut table = tx.open_table(WAL)?;
+            // Next key = last key + 1, or 0 if empty
+            let seq = table
+                .iter()?
+                .next_back()
+                .transpose()?
+                .map(|(k, _)| k.value() + 1)
+                .unwrap_or(0);
+            table.insert(seq, json.as_str())?;
+            seq
+        };
+        tx.commit()?;
+        Ok(seq)
+    }
+
+    /// Remove a successfully-sent event.
+    pub fn remove(&self, seq: u64) -> anyhow::Result<()> {
+        let tx = self.db.begin_write()?;
+        {
+            let mut table = tx.open_table(WAL)?;
+            table.remove(seq)?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Iterate all pending events in order. Returns (seq, event) pairs.
+    pub fn drain(&self) -> anyhow::Result<Vec<(u64, TelemetryEvent)>> {
+        let tx = self.db.begin_read()?;
+        let table = tx.open_table(WAL)?;
+        let mut out = Vec::new();
+        for entry in table.iter()? {
+            let (k, v) = entry?;
+            let event: TelemetryEvent = serde_json::from_str(v.value())?;
+            out.push((k.value(), event));
+        }
+        Ok(out)
+    }
+
+    pub fn len(&self) -> anyhow::Result<u64> {
+        let tx = self.db.begin_read()?;
+        let table = tx.open_table(WAL)?;
+        Ok(table.len()?)
+    }
+}

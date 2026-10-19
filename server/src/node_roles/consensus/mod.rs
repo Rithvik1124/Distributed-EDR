@@ -9,13 +9,13 @@ pub fn log_event(event: &TelemetryEvent)->std::io::Result<()>{
     let timestamp_utc = Utc::now();
     let timestamp: i64 = timestamp_utc.timestamp();
     let file_path = format!("{}.txt",dt1);
-    if exists(file_path)?{
-        let mut file = File::open("foo.txt")?;
+    if exists(&file_path)?{
+        let mut file = File::open(&file_path)?;
         file.write(&format!("{}: {:#?}", timestamp, event).into_bytes());
 
         
     }else{
-        let mut file = File::create(format!("{}.txt",dt1))?;
+        let mut file = File::create(&file_path)?;
         file.write("Time(UTC): Event".as_bytes());
         file.write(&format!("{}: {:#?}", timestamp, event).into_bytes());
     }

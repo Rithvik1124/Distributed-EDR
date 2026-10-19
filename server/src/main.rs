@@ -102,19 +102,19 @@ async fn log_requests(req: Request, next: Next) -> Response {
 async fn consensus_event_in(
     Json(event): Json<TelemetryEvent>,
 ) -> &'static str {
-    println!("\n\nConsensus Event Decision:\n\n");
     let decision = decide(&event);
+    println!("\n\nConsensus Event Decision: {:?} \n\n", &decision);
 
     let server = crate::node_roles::transport::client::ServerClient::new();
 
-    decision.execute(&server);
+    decision.execute(&server).await;
     "ok"
 }
 
 async fn server_func(
     Json(event): Json<TelemetryEvent>,
 ) -> &'static str {
-    println!("Got Telemetry to Server: {:#?}", event);
+    println!("Got Telemetry to Server: {:#?} \n", event);
     "ok"
 }
 

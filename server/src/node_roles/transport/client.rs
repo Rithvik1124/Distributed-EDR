@@ -12,18 +12,32 @@ pub struct ServerClient {
 impl ServerClient {
     pub fn new() -> Self {
         let server_ip = get_server_ip();
-        let endpoint = &format!("http://{}/telemetry-results", server_ip ) as &str;
+        let endpoint = format!("http://{}:3000/telemetry-results", server_ip);
 
         Self {
             client: Client::new(),
-            endpoint: endpoint.to_string(),
+            endpoint,
         }
     }
 
-    pub fn send_event<T: Serialize>(&self, event: &T) {
-        let _ = self.client
+    pub async fn send_event<T: Serialize + ?Sized>(
+        &self,
+        event: &T,
+    ) -> Result<(), reqwest::Error> {
+        println!("Sending event to {}", self.endpoint);
+
+        let response = self
+            .client
             .post(&self.endpoint)
             .json(event)
-            .send();
+            .send()
+            .await?;
+
+        println!(
+            "I sent the event X687: HTTP {}",
+            response.status()
+        );
+
+        Ok(())
     }
 }

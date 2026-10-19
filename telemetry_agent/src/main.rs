@@ -1,6 +1,7 @@
 //add an xdp/tc part for ioc ip blacklist
 mod telemetry;
 mod handlers;
+mod metrics;
 use core::time::Duration;
 use std::{ mem::MaybeUninit, 
         time::{SystemTime, UNIX_EPOCH}, 
@@ -16,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use libc::{clock_gettime, timespec, CLOCK_MONOTONIC};
 use crate::telemetry::*;
+use crate::metrics::*;
 // use crate::handlers::*;
 
 mod trial {
@@ -80,7 +82,8 @@ fn monotonic_to_unix_offset_ns() -> i128 {
 #[tokio::main]
 async fn main() -> Result<()> {
     // println!("Proc Event Stuff:\n");
-    println!("My PID: {}",std::process::id() );
+    // println!("My PID: {}",std::process::id() );
+    let _metrics_handle = metrics::spawn_metrics_loop();
     let opts = Command::from_args();
 
     let unix_offset_ns = monotonic_to_unix_offset_ns();

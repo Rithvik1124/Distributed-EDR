@@ -3642,6 +3642,7 @@ dependencies = [
  "object",
  "once_cell",
  "plain",
+ "redb",
  "reqwest",
  "serde",
  "serde_json",
