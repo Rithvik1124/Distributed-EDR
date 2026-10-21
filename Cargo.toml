@@ -5,7 +5,7 @@ edition = "2024"
 
 [workspace]
 members = [
-    "server",
+    "node_role_server",
     "telemetry_agent",
 ]
 resolver = "2"

@@ -23,6 +23,11 @@ struct MetricReport {
     process_latency_ms: f64,
 }
 
+#[derive(serde::Deserialize)]
+struct SchedulerAck {
+    config_url: String,
+}
+
 impl MetricReport {
     fn collect(node_id: String, advertise_url: Option<String>) -> io::Result<Self> {
         let cpu_usage = read_cpu_usage()?;
@@ -117,6 +122,23 @@ fn capacity_score(cpu: f64, memory: f64, latency_ms: f64) -> f64 {
     (cpu_headroom * 0.50 + memory_headroom * 0.35 + latency_score * 0.15).clamp(0.0, 100.0)
 }
 
+fn update_config(
+    client: &reqwest::blocking::Client,
+    config_url: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let response = client.get(config_url).send()?.error_for_status()?;
+
+    // Parse the response as JSON and pretty-print it.
+    let config: serde_json::Value = response.json()?;
+    let json = serde_json::to_vec_pretty(&config)?;
+
+    // Write the scheduler-generated node configuration.
+    fs::write("node.config.json", json)?;
+
+    println!("Updated node.config.json");
+
+    Ok(())
+}
 pub fn spawn_metrics_loop() -> std::thread::JoinHandle<()>{
     std::thread::spawn(|| {
     let scheduler_url = env::var("SCHEDULER_URL")
@@ -170,13 +192,27 @@ pub fn spawn_metrics_loop() -> std::thread::JoinHandle<()>{
                 );
                 match client.post(&scheduler_url).json(&report).send() {
                     Ok(response) => {
-                        let status = response.status();
-                        match response.error_for_status() {
-                            Ok(response) => match response.text() {
-                                Ok(body) => println!("scheduler accepted metrics ({status}): {body}"),
-                                Err(err) => eprintln!("could not read scheduler response: {err}"),
-                            },
-                            Err(err) => eprintln!("scheduler rejected metrics ({status}): {err}"),
+                        match response.json::<SchedulerAck>() {
+                            Ok(ack) => {
+                                let config_url = if ack.config_url.starts_with("http://")
+                                    || ack.config_url.starts_with("https://")
+                                {
+                                    ack.config_url
+                                } else {
+                                    let base = scheduler_url
+                                        .split('/')
+                                        .take(3)
+                                        .collect::<Vec<_>>()
+                                        .join("/");
+
+                                    format!("{base}{}", ack.config_url)
+                                };
+
+                                if let Err(err) = update_config(&client, &config_url) {
+                                    eprintln!("Could not update node.config.json: {err}");
+                                }
+                            }
+                            Err(err) => eprintln!("Could not parse scheduler response: {err}"),
                         }
                     }
                     Err(err) => eprintln!("could not send metrics to scheduler: {err}"),
