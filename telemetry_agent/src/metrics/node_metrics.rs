@@ -1,13 +1,12 @@
 use serde::Serialize;
 use std::{
-    env,
-    fs,
-    io,
-    thread,
-    time::{Duration, Instant},
+    env, fs, io, path::PathBuf, sync::LazyLock, thread, time::{Duration, Instant},
 };
 
+static NODE_CONFIG_PATH:LazyLock<Result<PathBuf, io::Error>> = std::sync::LazyLock::new(|| env::current_dir());
+
 #[derive(Debug, Clone, Copy)]
+
 struct CpuCounters {
     total: u64,
     idle: u64,
@@ -126,6 +125,8 @@ fn update_config(
     client: &reqwest::blocking::Client,
     config_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let path = NODE_CONFIG_PATH.as_ref().unwrap().to_str().unwrap().to_owned()+"/node_role_server/node.config.json";
+    println!("{:?}", path);
     let response = client.get(config_url).send()?.error_for_status()?;
 
     // Parse the response as JSON and pretty-print it.
@@ -133,13 +134,15 @@ fn update_config(
     let json = serde_json::to_vec_pretty(&config)?;
 
     // Write the scheduler-generated node configuration.
-    fs::write("node.config.json", json)?;
+    fs::write(path, json)?;
 
     println!("Updated node.config.json");
 
     Ok(())
 }
 pub fn spawn_metrics_loop() -> std::thread::JoinHandle<()>{
+    let path = NODE_CONFIG_PATH.as_ref().unwrap().to_str().unwrap().to_owned()+"/node_role_server/node.config.json";
+    println!("Path: {:?}", path);
     std::thread::spawn(|| {
     let scheduler_url = env::var("SCHEDULER_URL")
         .unwrap_or_else(|_| "http://127.0.0.1:8080/cpu".to_string());
